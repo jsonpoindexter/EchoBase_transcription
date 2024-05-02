@@ -1,0 +1,6 @@
+flask~=3.0.3
+pydub~=0.25.1
+python-dotenv~=0.19.1
+flask-limiter~=1.4.0
+librosa~=0.10.1
+werkzeug~=3.0.2

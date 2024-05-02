@@ -1,0 +1,9 @@
+# Use an official nvidia/cuda runtime as a parent image
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+
+# Update and install dependencies
+RUN apt-get update && apt-get install -y python3-pip ffmpeg git
+RUN pip3 install torch==2.3.0+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip3 install git+https://github.com/openai/whisper.git
+
+RUN pip3 install gunicorn
