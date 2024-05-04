@@ -1,8 +1,11 @@
 import logging
 import os
+import traceback
 
+import werkzeug
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
+from openai import NotGiven
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth import check_api_key
@@ -21,7 +24,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 limiter = Limiter(app, key_func=lambda: request.headers.get('X-API-KEY'))
 
-# Load the Whisper model
+# Load the Whisper modelF
 model = load_model()
 
 
@@ -29,9 +32,23 @@ def add_base_path(route):
     return f"/{FLASK_BASE_PATH}{route}"
 
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"Error: {e}")
+    app.logger.error(traceback.format_exc())
+
+    # pass through HTTP errors
+    if isinstance(e, werkzeug.exceptions.HTTPException):
+        return e
+
+    # handle non-HTTP exceptions
+    return jsonify({'error': str(e)}), 500
+
+
 @app.before_request
 def before_request():
     app.logger.debug(f"Request: {request}")
+    app.logger.debug(f"Request headers: {request.headers}")
 
 
 @app.route(add_base_path('/transcribe'), methods=['POST'])
@@ -42,11 +59,20 @@ def handle_transcribe_audio():
         return jsonify({'error': 'No file part'}), 400
 
     file = request.files['file']
-    print(f"Received file: {file}")
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+    # model = request.form.get('model', WHISPER_MODEL_NAME) # TODO: support changing models
+    language = request.form.get('language', None)
+    prompt = request.form.get('prompt', NotGiven)
+    temperature = request.form.get('temperature', None)
 
-    return transcribe_audio(file, model, TEMP_AUDIO_PATH)
+    # Then pass the parameters to the transcribe_audio function
+    return transcribe_audio(
+        file=file,
+        model=model,
+        temp_audio_path=TEMP_AUDIO_PATH,
+        prompt=prompt,
+        temperature=temperature,
+        language=language
+    )
 
 
 if __name__ != '__main__':

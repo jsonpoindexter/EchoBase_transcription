@@ -4,3 +4,5 @@ python-dotenv~=0.19.1
 flask-limiter~=1.4.0
 librosa~=0.10.1
 werkzeug~=3.0.2
+whisper~=1.1.10
+openai~=1.25.1
