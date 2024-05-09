@@ -6,3 +6,5 @@ librosa~=0.10.1
 werkzeug~=3.0.2
 whisper~=1.1.10
 openai~=1.25.1
+celery~=5.4.0
+redis~=5.0.0b2
