@@ -31,5 +31,5 @@ class ModelLoader:
             model = whisper.load_model(WHISPER_MODEL_NAME)
             torch.save(model, model_path)
         else:
-            model = torch.load(model_path)
+            model = torch.load(model_path, weights_only=False)
         return model

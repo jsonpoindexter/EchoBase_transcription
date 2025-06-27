@@ -13,15 +13,12 @@ transcription_worker = Celery("transcriptionTasks", broker="redis://redis:6379",
 def transcribe_audio(
         file_name,
         file_path,
-        # prompt,
-        # temperature,
-        # language=WHISPER_LANGUAGE
+        prompt,
+        language,
 ):
     print("Transcribing audio file")
     print(f"Transcribing audio file: {file_path}")
     model = ModelLoader.get_model()
-    # with open(file_path, 'rb') as file:
-    #     print(f"Parameters: {file}")
     try:
 
         # local_file_path = process_audio(file, temp_audio_path)
@@ -30,19 +27,7 @@ def transcribe_audio(
 
         print(f"Metadata:  {os.stat(file_path)}")
 
-        transcribe_args = {
-            'audio': file_path,
-            # 'prompt': prompt,
-            'verbose': True,
-        }
-
-        # if language is not None:
-        #     transcribe_args['language'] = language
-        # else:
-        transcribe_args['language'] = WHISPER_LANGUAGE
-        #
-        # if temperature is not None:
-        #     transcribe_args['temperature'] = temperature
+        transcribe_args = {'audio': file_path, 'verbose': True, 'language': language, 'initial_prompt': prompt}
 
         # Benchmark the model
         start_time = time.time()

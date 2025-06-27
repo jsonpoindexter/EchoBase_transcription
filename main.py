@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from auth import check_api_key
-from config import FLASK_API_KEY, FLASK_BASE_PATH, FLASK_RATE_LIMIT, FLASK_PORT
+from config import FLASK_API_KEY, FLASK_BASE_PATH, FLASK_RATE_LIMIT, FLASK_PORT, WHISPER_LANGUAGE
 from celery_worker import transcribe_audio
 
 # Define the directory name for storing files
@@ -17,6 +17,18 @@ dir_name = "temp"
 current_directory = os.getcwd()
 TEMP_AUDIO_PATH = os.path.join(current_directory, dir_name)
 os.makedirs(TEMP_AUDIO_PATH, exist_ok=True)
+
+PROMPT = """
+Phonetic alphabet: Adam Boy Charles David Edward Frank George Henry Ida John King Lincoln Mary Nora Ocean Paul Queen Robert Sam Tom Union Victor William X-ray Young Zebra.
+Radio codes: 10-1 poor reception 10-2 good reception 10-4 acknowledge 10-5 relay 10-6 traffic stop 10-7 out of service 10-8 in service 10-9 repeat 10-10 fight in progress
+10-12 stand-by 10-13 weather check 10-18 expedite 10-19 return to base 10-20 location 10-21 phone dispatch 10-22 disregard 10-23 on scene 10-24 mission complete.
+Nevada agencies & talk-groups: NHP Northern Command West Dispatch NHP Las Vegas Tac Reno Police Dispatch Sparks Police Washoe County Sheriff NDOT Freeway Service Patrol
+Storey County Sheriff Nevada Energy Ops.
+Typical unit call-signs: Adam units Baker units Charles units David units Frank units George units Henry units Ida units Lincoln units Mary units Nora units Sam units
+Union units Victor units William units.
+Common phrases: “Dispatch, Adam-21 traffic stop I-80 eastbound mile-marker 45 plate 8-Victor-Boy-Edward-718.” “Central, Charles-12 Code-4.” “Control, Nora-31 10-20 Gate 5.”
+Local geography: Reno Sparks Carson City Washoe County Storey County I-80 US-395 Pyramid Highway Virginia Street McCarran Boulevard.
+""".strip()
 
 
 # Initialize the Flask-Limiter extension
@@ -68,17 +80,13 @@ def create_app():
             return jsonify({'error': 'No file part'}), 400
 
         file = request.files['file']
-        language = request.form.get('language', None)
-        prompt = request.form.get('prompt', NotGiven)
-        temperature = request.form.get('temperature', None)
 
         # Save the uploaded file to disk
         file_path = os.path.join(TEMP_AUDIO_PATH, secure_filename(file.filename))
         file.save(file_path)
 
-        # Call the transcribe_audio task asynchronously using delay
-        transcribe_audio.delay(file.filename, file_path)
-        # customn_add.delay(1, 2)
+        # Call the transcribe_audio task asynchronously
+        transcribe_audio.delay(file.filename, file_path, prompt=PROMPT, language=WHISPER_LANGUAGE)
 
         # Return a response immediately
         return jsonify({'message': 'Transcription started'}), 202
