@@ -4,7 +4,6 @@ import traceback
 import werkzeug
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
-from openai import NotGiven
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -22,17 +21,6 @@ os.makedirs(TEMP_AUDIO_PATH, exist_ok=True)
 
 def create_app():
     app = Flask(__name__)
-
-    # app.config.from_mapping(
-    #     CELERY=dict(
-    #         broker_url='redis://redis:6379',
-    #         result_backend='redis://redis:6379',
-    #         task_ignore_result=True,
-    #     ),
-    # )
-    #
-    # celery = Celery(app.name, broker=app.config['CELERY']['broker_url'])
-    # celery.conf.update(app.config)
 
     app.wsgi_app = ProxyFix(app.wsgi_app)
     limiter = Limiter(app, key_func=lambda: request.headers.get('X-API-KEY'))
@@ -54,7 +42,6 @@ def create_app():
 
     @app.before_request
     def before_request():
-        print("Before request")
         app.logger.debug(f"Request: {request}")
         app.logger.debug(f"Request headers: {request.headers}")
 
