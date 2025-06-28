@@ -39,7 +39,10 @@ services:
   #              capabilities: [ gpu ]
   worker:
     build: .
-    command: celery -A celery_worker.transcription_worker worker --loglevel=debug
+    command: celery -A celery_worker worker --loglevel=debug --pool=solo
+    environment:
+      - CELERY_WORKER_RUNNING=1
+      - CELERYD_FORCE_EXECV=1
     volumes:
       - .:/app
       - model-data:/models
