@@ -14,32 +14,11 @@ services:
       - FLASK_APP=main.py
     depends_on:
       - worker
-  #    deploy:
-  #      resources:
-  #        reservations:
-  #          devices:
-  #            - driver: nvidia
-  #              count: all
-  #              capabilities: [ gpu ]
-  #  prod:
-  #    build: .
-  #    volumes:
-  #      - model-data:/models
-  #    ports:
-  #      - "${FLASK_PORT}:${FLASK_PORT}"
-  #    command: gunicorn -w 1 -b 0.0.0.0:${FLASK_PORT} --log-level=debug main:app --reload
-  #    depends_on:
-  #      - worker
-  #    deploy:
-  #      resources:
-  #        reservations:
-  #          devices:
-  #            - driver: nvidia
-  #              count: all
-  #              capabilities: [ gpu ]
   worker:
-    build: .
-    command: celery -A celery_worker worker --loglevel=debug --pool=solo
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    command: celery -A celery_worker worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup
     environment:
       - CELERY_WORKER_RUNNING=1
       - CELERYD_FORCE_EXECV=1

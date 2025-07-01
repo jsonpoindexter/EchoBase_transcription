@@ -1,6 +1,6 @@
 import os
 import traceback
-
+import mutagen
 import werkzeug
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
@@ -58,6 +58,21 @@ def create_app():
         # Save the uploaded file to disk
         file_path = os.path.join(TEMP_AUDIO_PATH, secure_filename(file.filename))
         file.save(file_path)
+
+        # Get wav metadata from the file using Mutagen
+        if not file_path.lower().endswith(('.wav', '.mp3')):
+            return jsonify({'error': 'Unsupported file type'}), 400
+        try:
+            audio = mutagen.File(file_path)
+
+            if audio is None:
+                return jsonify({'error': 'Invalid audio file'}), 400
+
+            app.logger.debug(audio.info)
+
+        except Exception as e:
+            app.logger.error(f"Error reading audio file metadata: {e}")
+            return jsonify({'error': 'Invalid audio file'}), 400
 
         # Call the transcribe_audio task asynchronously
         transcribe_audio.delay(file.filename, file_path, prompt=WHISPER_INITIAL_PROMPT, language=WHISPER_LANGUAGE)
