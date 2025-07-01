@@ -23,21 +23,11 @@ def transcribe_audio(
     if model is None:
         # Defensive: should never happen in worker
         return {"error": "Model not loaded", "type": "RuntimeError"}
-    print("Transcribing audio file")
-    print(f"Transcribing audio file: {file_path}")
     try:
         print(f"Metadata:  {os.stat(file_path)}")
         transcribe_args = {'audio': file_path, 'verbose': True, 'language': language, 'initial_prompt': prompt}
-        start_time = time.time()
         result = model.transcribe(**transcribe_args)
-        end_time = time.time()
-        duration = end_time - start_time
-        print(f"Transcription time: {duration} seconds")
-        print(f"Result: {result}")
-        transcription = result['text']
-        print(f"Transcription: {transcription}")
         result['file_name'] = file_name
-        result['duration'] = duration
         return result
     except Exception as e:
         return {"error": str(e), "type": type(e).__name__}
