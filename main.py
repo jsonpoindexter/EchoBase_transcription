@@ -2,6 +2,7 @@ import os
 import traceback
 import mutagen
 import werkzeug
+import uuid
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
 from werkzeug.exceptions import ClientDisconnected
@@ -12,6 +13,7 @@ from auth import check_api_key
 from config import FLASK_API_KEY, FLASK_BASE_PATH, FLASK_RATE_LIMIT, FLASK_PORT, WHISPER_LANGUAGE, \
     WHISPER_INITIAL_PROMPT
 from celery_worker import transcribe_audio
+from sse import create_stream_response
 
 # Define the directory name for storing files
 dir_name = "temp"
@@ -85,6 +87,12 @@ def create_app():
 
         # Return a response immediately
         return jsonify({'message': 'Transcription started'}), 202
+
+    @app.route('/transcription/events')
+    @check_api_key(FLASK_API_KEY)
+    def transcription_events():
+        client_id = str(uuid.uuid4())
+        return create_stream_response(client_id)
 
     return app
 
