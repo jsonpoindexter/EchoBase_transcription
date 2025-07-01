@@ -25,10 +25,21 @@ def transcribe_audio(
         return {"error": "Model not loaded", "type": "RuntimeError"}
     try:
         print(f"Metadata:  {os.stat(file_path)}")
-        transcribe_args = {'audio': file_path, 'verbose': True, 'language': language, 'initial_prompt': prompt}
-        result = model.transcribe(**transcribe_args)
-        result['file_name'] = file_name
-        return result
+        transcribe_args = {'audio': file_path, 'language': language, 'initial_prompt': prompt}
+        start_time = time.time()
+        segments, info = model.transcribe(**transcribe_args)
+        end_time = time.time()
+        transcribe_time = end_time - start_time
+        print(f"Transcription completed for {file_name} in {transcribe_time} seconds")
+        print(info)
+        text = "".join([segment.text for segment in segments])
+        return {
+            "file_name": file_name,
+            "text": text,
+            "language": info.language,
+            "duration": info.duration,
+            "transcribe_time": transcribe_time
+        }
     except Exception as e:
         return {"error": str(e), "type": type(e).__name__}
 

@@ -1,9 +1,5 @@
-import os
-
-import torch
-import whisper
-
 from config import WHISPER_MODEL_NAME
+from faster_whisper import WhisperModel
 
 
 class ModelLoader:
@@ -17,19 +13,8 @@ class ModelLoader:
 
     @staticmethod
     def _load_model():
-        print(f"CUDA available: {torch.cuda.is_available()}")
-        print(f"Available whisper models: {whisper.available_models()}")
-        print(f"Using model: {WHISPER_MODEL_NAME}")
-
-        # Make sure WHISPER_MODEL_NAME is available
-        if WHISPER_MODEL_NAME not in whisper.available_models():
-            raise ValueError(f"WHISPER_MODEL_NAME {WHISPER_MODEL_NAME} not available")
-
-        model_path = f"/models/{WHISPER_MODEL_NAME}"
-        if not os.path.exists(model_path):
-            torch.cuda.init()
-            model = whisper.load_model(WHISPER_MODEL_NAME)
-            torch.save(model, model_path)
-        else:
-            model = torch.load(model_path, weights_only=False)
+        print(f"Using faster_whisper model: {WHISPER_MODEL_NAME}")
+        # You can set device="cuda" if CUDA is available, else "cpu"
+        # model = WhisperModel(WHISPER_MODEL_NAME, device="cuda" if WhisperModel.is_cuda_available() else "cpu")
+        model = WhisperModel(WHISPER_MODEL_NAME, device="cuda", compute_type="float16")
         return model
