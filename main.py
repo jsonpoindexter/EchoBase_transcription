@@ -4,6 +4,7 @@ import mutagen
 import werkzeug
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
+from werkzeug.exceptions import ClientDisconnected
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -44,6 +45,11 @@ def create_app():
     def before_request():
         app.logger.debug(f"Request: {request}")
         app.logger.debug(f"Request headers: {request.headers}")
+
+    @app.errorhandler(ClientDisconnected)
+    def handle_disconnect(e):
+        app.logger.warning("Client dropped connection during upload")
+        return jsonify({"error": "Connection closed before upload finished"}), 400
 
     @app.route(add_base_path('/transcribe'), methods=['POST'])
     @check_api_key(FLASK_API_KEY)
