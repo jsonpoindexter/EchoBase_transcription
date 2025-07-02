@@ -1,6 +1,7 @@
 import os
 from celery import Celery
 from config import REDIS_URL
+from models.utils import segment_confidence
 from sse_publisher import publish_event
 
 transcription_worker = Celery("transcriptionTasks", broker=REDIS_URL, backend=REDIS_URL)
@@ -30,17 +31,22 @@ def transcribe_audio(
         transcribe_args = {'audio': file_path, 'language': language, 'initial_prompt': prompt}
         start_time = time.time()
         segments, info = model.transcribe(**transcribe_args)
+        segments = list(segments)
         end_time = time.time()
-        transcribe_time = end_time - start_time
-        print(f"Transcription completed for {file_name} in {transcribe_time} seconds")
+        processing_time_seconds = end_time - start_time
+        print(f"Transcription completed for {file_name} in {processing_time_seconds} seconds")
+        print(segments)
         print(info)
+
         text = "".join([segment.text for segment in segments])
         result = {
             "file_name": file_name,
             "text": text,
             "language": info.language,
             "duration": info.duration,
-            "transcribe_time": transcribe_time
+            "processing_time_seconds": processing_time_seconds,
+            "segments": segments,
+            "confidence": [segment_confidence(segment) for segment in segments],
         }
         publish_event(event_type="transcription_completed", data=result)
         return result
