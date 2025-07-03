@@ -10,8 +10,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from auth import check_api_key
+from call_handler.call_handler import start_file_watcher
 from config import FLASK_API_KEY, FLASK_BASE_PATH, FLASK_RATE_LIMIT, FLASK_PORT, WHISPER_LANGUAGE, \
-    WHISPER_INITIAL_PROMPT
+    WHISPER_INITIAL_PROMPT, CALL_WATCH_PATH
 from celery_worker import transcribe_audio
 from sse import create_stream_response
 
@@ -24,6 +25,12 @@ os.makedirs(TEMP_AUDIO_PATH, exist_ok=True)
 
 def create_app():
     app = Flask(__name__)
+
+    if CALL_WATCH_PATH and (
+            not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+    ):
+        app.logger.info(f"Watching for new audio files in {CALL_WATCH_PATH}")
+        start_file_watcher(CALL_WATCH_PATH)
 
     app.wsgi_app = ProxyFix(app.wsgi_app)
     limiter = Limiter(app, key_func=lambda: request.headers.get('X-API-KEY'))

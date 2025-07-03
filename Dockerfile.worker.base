@@ -1,0 +1,12 @@
+FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+# Install Python 3.9 and pip
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3.9 python3.9-distutils python3.9-venv curl && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.9

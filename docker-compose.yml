@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   dev:
     build: .
@@ -6,18 +5,22 @@ services:
       - .:/app
       - model-data:/models
       - temp-data:/app/temp
+      - ${CALL_WATCH_PATH}:/app/recordings
     ports:
       - "${FLASK_PORT}:${FLASK_PORT}"
     command: flask run --host=0.0.0.0 --port=${FLASK_PORT} --debug --reload
     environment:
       - FLASK_ENV=development
       - FLASK_APP=main.py
+      - CALL_WATCH_PATH=/app/recordings
     depends_on:
       - worker
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
+      args:
+        - BASE_IMAGE=echobase_transcription-worker:latest
     command: celery -A celery_worker worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup
     environment:
       - CELERY_WORKER_RUNNING=1
@@ -26,6 +29,7 @@ services:
       - .:/app
       - model-data:/models
       - temp-data:/app/temp
+      - ${CALL_WATCH_PATH}:/app/recordings
     depends_on:
       - redis
     deploy:

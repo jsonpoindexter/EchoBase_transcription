@@ -1,4 +1,5 @@
 import os
+from dataclasses import asdict
 from celery import Celery
 from config import REDIS_URL
 from models.utils import segment_confidence
@@ -45,7 +46,7 @@ def transcribe_audio(
             "language": info.language,
             "duration": info.duration,
             "processing_time_seconds": processing_time_seconds,
-            "segments": segments,
+            "segments": [asdict(s) for s in segments],
             "confidence": [segment_confidence(segment) for segment in segments],
         }
         publish_event(event_type="transcription_completed", data=result)
