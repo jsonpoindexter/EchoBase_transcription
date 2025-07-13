@@ -3,7 +3,7 @@ from dataclasses import asdict
 from celery import Celery
 from config import REDIS_URL
 from models.utils import segment_confidence
-from sse_publisher import publish_event
+from sse.sse_publisher import publish_event
 
 transcription_worker = Celery("transcriptionTasks", broker=REDIS_URL, backend=REDIS_URL)
 

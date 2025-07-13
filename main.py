@@ -14,7 +14,7 @@ from call_handler.call_handler import start_file_watcher
 from config import FLASK_API_KEY, FLASK_BASE_PATH, FLASK_RATE_LIMIT, FLASK_PORT, WHISPER_LANGUAGE, \
     WHISPER_INITIAL_PROMPT, CALL_WATCH_PATH
 from celery_worker import transcribe_audio
-from sse import create_stream_response
+from sse.sse_server import create_stream_response
 
 # Define the directory name for storing files
 dir_name = "temp"
