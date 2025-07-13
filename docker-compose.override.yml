@@ -1,11 +1,4 @@
 services:
-  worker_base_dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker.base
-      target: dev          # builds the “FROM base AS dev” stage
-    image: echobase_transcription-worker:dev
-
   worker:
     build:
       context: .
