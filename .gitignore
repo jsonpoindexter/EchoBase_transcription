@@ -1,2 +1,4 @@
 */.idea
 .env
+/static/swagger.yaml
+/temp/*
