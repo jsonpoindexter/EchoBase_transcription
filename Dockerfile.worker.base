@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu20.04 AS base
+ARG CUDA_BASE=nvidia/cuda:12.9.1-cudnn-devel-ubuntu20.04@sha256:4d6d1f25e5d0d6df4b8d7b8eb4d253bb5ab6c0cab9e1be71126c99a8be3c1d0c
+FROM ${CUDA_BASE} AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
