@@ -1,6 +1,8 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     volumes:
       - .:/app
       - model-data:/models
