@@ -97,10 +97,10 @@ def create_app():
             return jsonify({'error': 'Invalid audio file'}), 400
 
         # Call the transcribe_audio task asynchronously
-        transcribe_audio.delay(file.filename, file_path, prompt=WHISPER_INITIAL_PROMPT, language=WHISPER_LANGUAGE)
+        task = transcribe_audio.delay(file.filename, file_path, prompt=WHISPER_INITIAL_PROMPT, language=WHISPER_LANGUAGE)
 
         # Return a response immediately
-        return jsonify({'message': 'Transcription started'}), 202
+        return jsonify({'message': 'Transcription started', "taskId": task.id}), 202
 
     @app.route('/transcription/events')
     @check_api_key(FLASK_API_KEY)
