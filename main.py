@@ -60,6 +60,13 @@ def create_app():
         app.logger.warning("Client dropped connection during upload")
         return jsonify({"error": "Connection closed before upload finished"}), 400
 
+    @app.route(add_base_path('/health'), methods=['GET'])
+    @limiter.limit(FLASK_RATE_LIMIT)
+    def health_check(e):
+        app.logger.error(f"Error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'status': 'ok'}), 200
+
     @app.route(add_base_path('/transcribe'), methods=['POST'])
     @check_api_key(FLASK_API_KEY)
     @limiter.limit(FLASK_RATE_LIMIT)
