@@ -6,6 +6,7 @@ from models.utils import segment_confidence
 from sse.sse_publisher import publish_event
 
 transcription_worker = Celery("transcriptionTasks", broker=REDIS_URL, backend=REDIS_URL)
+transcription_worker.conf.broker_connection_retry_on_startup = True
 
 # Only load the model in the worker process
 if __name__ == "__main__" or os.environ.get("CELERY_WORKER_RUNNING") == "1":
