@@ -35,6 +35,12 @@ os.makedirs(TEMP_AUDIO_PATH, exist_ok=True)
 def create_app():
     app = Flask(__name__)
 
+    # Pick configuration based on FLASK_ENV
+    if os.getenv("FLASK_ENV") == "production":
+        app.config.from_object("config.ProductionConfig")
+    else:
+        app.config.from_object("config.DevelopmentConfig")
+
     # ---------------------------------
     #  Swagger / OpenAPI configuration
     # ---------------------------------
@@ -135,6 +141,10 @@ def create_app():
         client_id = str(uuid.uuid4())
         return create_stream_response(client_id)
 
+    # Generate the swagger.yaml file before attaching UI so /docs routes
+    # do not appear in the spec
+    generator.generate_swagger(app, destination_path=swagger_destination_path)
+
     # Serve Swagger‑UI at /docs using the swagger.yaml we just generated
     swaggerui_blueprint = get_swaggerui_blueprint(
         "/docs",                         # Swagger UI endpoint
@@ -146,17 +156,8 @@ def create_app():
     )
     app.register_blueprint(swaggerui_blueprint, url_prefix="/docs")
 
-    # Generate the swagger.yaml file once all routes are registered
-    generator.generate_swagger(app, destination_path=swagger_destination_path)
     return app
-
-# if __name__ != '__main__':
-#     print("Starting Flask app != __main__")
-#     gunicorn_logger = logging.getLogger('gunicorn.error')
-#     app.logger.handlers = gunicorn_logger.handlers
-#     app.logger.setLevel(gunicorn_logger.level)
 
 if __name__ == '__main__':
     app = create_app()
-    print("Starting Flask app == __main__")
-    app.run(host='0.0.0.0', debug=True, port=FLASK_PORT)
+    app.run(host='0.0.0.0', debug=app.config['DEBUG'], port=FLASK_PORT)

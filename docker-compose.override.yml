@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile.worker.base
       target: dev          # builds the “FROM base AS dev” stage
     image: echobase_transcription-worker:dev
-    profiles: ["build-only"]
 
   worker:
     build:

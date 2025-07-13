@@ -22,3 +22,29 @@ WHISPER_INITIAL_PROMPT = os.getenv("WHISPER_INITIAL_PROMPT", "").strip()
 print(f"WHISPER_INITIAL_PROMPT: {WHISPER_INITIAL_PROMPT}")
 CALL_WATCH_PATH = os.getenv("CALL_WATCH_PATH")
 print(f"CALL_WATCH_PATH: {CALL_WATCH_PATH}")
+
+# -------------------------------------------------
+#  Flask configuration objects
+# -------------------------------------------------
+class BaseConfig:
+    # Environment‑driven secrets and knobs
+    FLASK_API_KEY = FLASK_API_KEY
+    FLASK_PORT = FLASK_PORT
+    FLASK_BASE_PATH = FLASK_BASE_PATH
+    FLASK_RATE_LIMIT = FLASK_RATE_LIMIT
+    REDIS_URL = REDIS_URL
+    WHISPER_MODEL_NAME = WHISPER_MODEL_NAME
+    WHISPER_LANGUAGE = WHISPER_LANGUAGE
+    WHISPER_INITIAL_PROMPT = WHISPER_INITIAL_PROMPT
+    CALL_WATCH_PATH = CALL_WATCH_PATH
+
+class DevelopmentConfig(BaseConfig):
+    DEBUG = True
+    TESTING = False
+    CORS_ALLOW_ALL_ORIGINS = True
+
+class ProductionConfig(BaseConfig):
+    DEBUG = False
+    TESTING = False
+    SESSION_COOKIE_SECURE = True
+    PREFERRED_URL_SCHEME = "http"

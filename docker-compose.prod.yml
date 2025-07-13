@@ -1,0 +1,19 @@
+services:
+  api:
+    command:
+      - gunicorn
+      - "-k"
+      - gevent
+      - "-w"
+      - "2"
+      - "--reload"
+      - "-b"
+      - "0.0.0.0:${FLASK_PORT}"
+      - "main:create_app()"
+    environment:
+      - FLASK_ENV=production
+  worker:
+    build:
+      args:
+        BASE_IMAGE: echobase_transcription-worker:prod
+    command: celery -A celery_worker worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup

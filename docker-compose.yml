@@ -8,7 +8,16 @@ services:
       - ${CALL_WATCH_PATH}:/app/recordings
     ports:
       - "${FLASK_PORT}:${FLASK_PORT}"
-    command: flask run --host=0.0.0.0 --port=${FLASK_PORT} --debug --reload
+    command:
+      - gunicorn
+      - "-k"
+      - gevent
+      - "-w"
+      - "2"
+      - "--reload"
+      - "-b"
+      - "0.0.0.0:${FLASK_PORT}"
+      - "main:create_app()"
     environment:
       - FLASK_ENV=development
       - FLASK_APP=main.py
@@ -20,7 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile.worker
       args:
-        - BASE_IMAGE=echobase_transcription-worker:latest
+          BASE_IMAGE: echobase_transcription-worker:prod
     command: celery -A celery_worker worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup
     environment:
       - CELERY_WORKER_RUNNING=1
