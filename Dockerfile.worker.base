@@ -15,7 +15,8 @@ RUN apt-get update && \
 
 # ---- Development image ----
 FROM base AS dev
-RUN pip install --no-cache-dir "watchdog[watchmedo]"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir "watchdog[watchmedo]"
 
 # ---- Production image ----
 FROM base AS prod

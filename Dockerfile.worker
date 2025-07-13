@@ -3,7 +3,8 @@ FROM ${BASE_IMAGE}
 
 COPY requirements.worker.txt .
 
-RUN python3.9 -m pip install --no-cache-dir -r requirements.worker.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3.9 -m pip install --no-cache-dir -r requirements.worker.txt
 
 COPY . .
 
