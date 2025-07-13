@@ -1,4 +1,5 @@
-FROM echobase_transcription-worker:latest
+ARG BASE_IMAGE=echobase_transcription-worker:dev
+FROM ${BASE_IMAGE}
 
 COPY requirements.worker.txt .
 

@@ -32,13 +32,13 @@ services:
       - ${CALL_WATCH_PATH}:/app/recordings
     depends_on:
       - redis
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [ gpu ]
   redis:
     image: redis:latest
     ports:

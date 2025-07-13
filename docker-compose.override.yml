@@ -1,0 +1,18 @@
+services:
+  worker_base_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker.base
+      target: dev          # builds the “FROM base AS dev” stage
+    image: echobase_transcription-worker:dev
+    profiles: ["build-only"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker      # FROM echobase_transcription-worker:dev
+      args:
+        BASE_IMAGE: echobase_transcription-worker:dev
+    command: >
+      watchmedo auto-restart --directory=/app --pattern='*.py' --recursive --
+        celery -A celery_worker worker --loglevel=info --pool=solo
