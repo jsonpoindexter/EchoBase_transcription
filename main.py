@@ -7,7 +7,16 @@ from flask import Flask, request, jsonify
 from flask_limiter import Limiter
 from werkzeug.exceptions import ClientDisconnected
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 from werkzeug.utils import secure_filename
+
+# ---- Swagger / OpenAPI ----
+from flask_swagger_generator.generators import Generator
+from flask_swagger_generator.utils import SwaggerVersion
+from flask_swagger_generator.utils import SecurityType
+
+# Swagger‑UI (served locally)
+from flask_swagger_ui import get_swaggerui_blueprint
 
 from auth import check_api_key
 from call_handler.call_handler import start_file_watcher
@@ -26,6 +35,15 @@ os.makedirs(TEMP_AUDIO_PATH, exist_ok=True)
 def create_app():
     app = Flask(__name__)
 
+    # ---------------------------------
+    #  Swagger / OpenAPI configuration
+    # ---------------------------------
+    swagger_destination_path = os.path.join(current_directory, "static", "swagger.yaml")
+    os.makedirs(os.path.dirname(swagger_destination_path), exist_ok=True)
+
+    # Create a Swagger 3.0 generator instance
+    generator = Generator.of(SwaggerVersion.VERSION_THREE)
+
     if CALL_WATCH_PATH and (
             not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
     ):
@@ -35,8 +53,14 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app)
     limiter = Limiter(app, key_func=lambda: request.headers.get('X-API-KEY'))
 
-    def add_base_path(route):
-        return f"/{FLASK_BASE_PATH}{route}"
+    def add_base_path(route: str) -> str:
+        """
+        Prefix every route with the optional FLASK_BASE_PATH.
+        If FLASK_BASE_PATH is empty (the common dev case) we leave the
+        route untouched so the path in the OpenAPI spec is `/health`
+        instead of `//health`.
+        """
+        return f"/{FLASK_BASE_PATH}{route}" if FLASK_BASE_PATH else route
 
     @app.errorhandler(Exception)
     def handle_exception(e):
@@ -60,6 +84,7 @@ def create_app():
         app.logger.warning("Client dropped connection during upload")
         return jsonify({"error": "Connection closed before upload finished"}), 400
 
+    @generator.response(status_code=200, schema={'status': 'ok'})
     @app.route(add_base_path('/health'), methods=['GET'])
     @limiter.limit(FLASK_RATE_LIMIT)
     def health_check(e):
@@ -67,6 +92,8 @@ def create_app():
         app.logger.error(traceback.format_exc())
         return jsonify({'status': 'ok'}), 200
 
+    @generator.response(status_code=202, schema={'message': 'string', 'taskId': 'string'})
+    @generator.request_body({'file': 'binary'})
     @app.route(add_base_path('/transcribe'), methods=['POST'])
     @check_api_key(FLASK_API_KEY)
     @limiter.limit(FLASK_RATE_LIMIT)
@@ -108,8 +135,20 @@ def create_app():
         client_id = str(uuid.uuid4())
         return create_stream_response(client_id)
 
-    return app
+    # Serve Swagger‑UI at /docs using the swagger.yaml we just generated
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        "/docs",                         # Swagger UI endpoint
+        "/static/swagger.yaml",          # API spec location
+        config={                         # UI config overrides
+            "app_name": "EchoBase API Docs",
+            "docExpansion": "none",
+        },
+    )
+    app.register_blueprint(swaggerui_blueprint, url_prefix="/docs")
 
+    # Generate the swagger.yaml file once all routes are registered
+    generator.generate_swagger(app, destination_path=swagger_destination_path)
+    return app
 
 # if __name__ != '__main__':
 #     print("Starting Flask app != __main__")
