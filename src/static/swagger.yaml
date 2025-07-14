@@ -1,0 +1,45 @@
+openapi: 3.0.1
+info:
+  title: Application
+  description: Generated at 14/07/2025 23:52:27. This is the swagger 
+    ui based on the open api 3.0 specification of the Application
+  version: 1.0.0 created by the flask swagger generator.
+externalDocs:
+  description: Find out more about Swagger
+  url: 'http://swagger.io'
+servers:
+  - url: '/'
+paths:
+  '/health':
+    get:
+      tags:
+      - health
+      operationId: 'health'
+      responses:
+        '200':
+          $ref: '#/components/responses/health_response'
+  '/transcribe':
+    post:
+      tags:
+      - transcribe
+      operationId: 'handle_transcribe_audio'
+  '/transcription/events':
+    get:
+      tags:
+      - stream
+      operationId: 'transcription_events'
+components:
+  responses:
+    health_response:
+      description: health response
+      content:
+         application/json:
+             schema:
+                 $ref: '#/components/schemas/health_response_schema'
+  schemas:
+    health_response_schema:
+      type: object
+      properties:
+        status:
+          type: string  
+          example: ok  
