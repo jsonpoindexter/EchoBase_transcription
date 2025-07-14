@@ -50,6 +50,9 @@ class Settings(BaseSettings):
         "postgresql+psycopg2://user:password@db/echobase",
         validation_alias="DATABASE_URL",
     )
+    sqlalchemy_echo: bool = Field(
+        False, validation_alias="SQLALCHEMY_ECHO"
+    )  # SQLAlchemy debug logging
 
     # --------------------------------------------------------------------- #
     # Misc

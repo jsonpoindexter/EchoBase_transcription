@@ -10,9 +10,6 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from ..config import settings
 
-# If you set SQLALCHEMY_ECHO=1 in the environment you’ll get SQL debug logs.
-ECHO_SQL: bool = bool(int(os.getenv("SQLALCHEMY_ECHO", "0")))
-
 # --------------------------------------------------------------------------- #
 # Engine & Session
 # --------------------------------------------------------------------------- #
@@ -20,7 +17,7 @@ engine: Engine = create_engine(
     settings.database_url,
     future=True,          # 2.0 style
     pool_pre_ping=True,   # Detect stale connections
-    echo=ECHO_SQL,
+    echo=settings.sqlalchemy_echo,
 )
 
 # Thread‑local scoped session; suitable for Flask and Celery workers alike.
