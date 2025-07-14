@@ -16,8 +16,9 @@ services:
       --access-logfile -
       -b 0.0.0.0:${FLASK_PORT}
     environment:
-      - FLASK_ENV=development=
+      - FLASK_ENV=development
       - CALL_WATCH_PATH=/app/recordings
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - worker
   worker:
