@@ -17,7 +17,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 
 # create the generator once
 swagger_gen = Generator.of(SwaggerVersion.VERSION_THREE)
-
+current_directory = os.getcwd()
 
 def add_base_path(route: str) -> str:
     """Prefix every route with settings.base_path ('' in dev)."""
@@ -49,12 +49,17 @@ def create_app() -> Flask:
     app.register_blueprint(stream_bp, url_prefix=add_base_path(""))
 
     # -------------------------- Swagger generation ------------------------- #
-    swagger_yaml_path = Path(__file__).with_suffix(".yaml").with_name("swagger.yaml")
-    swagger_gen.generate_swagger(app, destination_path=str(swagger_yaml_path))
+    static_dir = Path(app.instance_path).parent / "static"
+    swagger_destination_path = static_dir / "swagger.yaml"
+    os.makedirs(static_dir, exist_ok=True)
+    swagger_gen.generate_swagger(app, destination_path=str(swagger_destination_path))
+
+    app.static_folder = str(static_dir)
+    app.static_url_path = "/static"
 
     swagger_ui = get_swaggerui_blueprint(
         "/docs",
-        f"/static/{swagger_yaml_path.name}",
+        "/static/swagger.yaml",  # URL path to the swagger file
         config={"app_name": "EchoBase API Docs", "docExpansion": "none"},
     )
     app.register_blueprint(swagger_ui, url_prefix="/docs")
