@@ -94,6 +94,12 @@ WHISPER_COMPUTE_TYPE=auto
 
 # Paths
 CALL_WATCH_PATH=/host/recordings
+
+# Database
+DATABASE_URL=postgresql://user:password@db:5432/echobase
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=echobase
 ```
 
 > **GPU vs CPU**  
@@ -107,12 +113,15 @@ CALL_WATCH_PATH=/host/recordings
 ## Quick Start — Local Dev
 
 ```bash
-# 1–clone & cd
+# 1 — Clone & cd
 git clone https://github.com/<you>/EchoBase_transcription.git
 cd EchoBase_transcription
 
-# 2–bring up dev stack (hot‑reload)
-docker compose up --build
+# 2 — Build & boot dev stack (hot‑reload)
+docker compose up --build -d
+
+# 3 — Run DB migrations once
+docker compose run --rm api alembic upgrade head
 ```
 
 Open <http://localhost:3000/docs> → interactive Swagger‑UI.
@@ -128,7 +137,7 @@ Code changes under `./` instantly restart the API & worker.
 | Build **only** the worker base image (rare) | `docker compose build worker` |
 | Run unit tests inside the API container | `docker compose exec api pytest` |
 | Lint | `docker compose exec api ruff check .` |
-| Recreate DB | `docker compose exec db psql …` |
+| Apply latest migrations | docker compose run --rm api alembic upgrade head |
 | Stop & clean | `docker compose down -v` |
 
 ### Building the dev / prod worker base once
