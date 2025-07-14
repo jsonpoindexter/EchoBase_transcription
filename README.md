@@ -8,18 +8,19 @@ deployment**.
 
 ---
 
-## TableofContents
+## Table of Contents
 1. [Architecture](#architecture)
 2. [Prerequisites](#prerequisites)
 3. [Repository Layout](#repository-layout)
-4. [EnvironmentVariables](#environment-variables)
-5. [QuickStart—LocalDev](#quick-start--local-dev)
-6. [Day‑to‑DayDeveloperWorkflow](#day-to-day-developer-workflow)
-7. [Low‑BandwidthDeploymentStrategy](#low-bandwidth-deployment-strategy)
-8. [ProductionDeployment](#production-deployment)
-9. [UpdatingDependencies](#updating-dependencies)
-10. [Troubleshooting](#troubleshooting)
-11. [License](#license)
+4. [Environment Variables](#environment-variables)
+5. [Quick Start — Local Dev](#quick-start--local-dev)
+6. [Day‑to‑Day Developer Workflow](#day-to-day-developer-workflow)
+7. [GPU / CPU Toggle](#gpu--cpu-toggle)
+8. [Low‑Bandwidth Deployment Strategy](#low-bandwidth-deployment-strategy)
+9. [Production Deployment](#production-deployment)
+10. [Updating Dependencies](#updating-dependencies)
+11. [Troubleshooting](#troubleshooting)
+12. [License](#license)
 
 ---
 
@@ -48,13 +49,13 @@ deployment**.
 ## Prerequisites
 | Tool | Dev workstation | Low‑bw deploy box |
 |------|-----------------|-------------------|
-| Docker≥24(BuildKit) | ✔ | ✔ |
-| DockerComposev2      | ✔ | ✔ |
+| Docker ≥ 24 (BuildKit) | ✔ | ✔ |
+| Docker Compose v2      | ✔ | ✔ |
 | (Optional) NVIDIAdriver+runtime | if GPU transcode | if GPU present |
 
 ---
 
-## RepositoryLayout
+## Repository Layout
 
 | Path | Purpose |
 |------|---------|
@@ -70,7 +71,7 @@ deployment**.
 
 ---
 
-## EnvironmentVariables
+## Environment Variables
 
 Create a file named **`.env`** at repo root:
 
@@ -86,15 +87,24 @@ WHISPER_MODEL_NAME=medium.en
 WHISPER_LANGUAGE=en
 WHISPER_INITIAL_PROMPT=
 
+# Device selection: auto | cuda | cpu
+WHISPER_DEVICE=auto
+# float16 for GPU, int8 for CPU, or auto
+WHISPER_COMPUTE_TYPE=auto
+
 # Paths
 CALL_WATCH_PATH=/host/recordings
 ```
 
-Compose automatically loads this file.
+> **GPU vs CPU**  
+> To choose the execution device for Whisper/Faster‑Whisper, set  
+> `WHISPER_DEVICE=cuda` (GPU), `WHISPER_DEVICE=cpu`, or `WHISPER_DEVICE=auto`  
+> (default – picks GPU if available).  
+> `WHISPER_COMPUTE_TYPE` is usually `float16` for GPUs and `int8` for CPU.
 
 ---
 
-## QuickStart—LocalDev
+## Quick Start — Local Dev
 
 ```bash
 # 1–clone & cd
@@ -111,7 +121,7 @@ Code changes under `./` instantly restart the API & worker.
 
 ---
 
-## Day‑to‑DayDeveloperWorkflow
+## Day‑to‑Day Developer Workflow
 
 | Task | Command |
 |------|---------|
@@ -135,7 +145,25 @@ You rarely need to touch these unless CUDA or system libs change.
 
 ---
 
-## Low‑BandwidthDeploymentStrategy
+## GPU / CPU Toggle
+
+Three ways to switch:
+
+| Scenario | How |
+|----------|-----|
+| **Local dev on GPU machine** | In `.env`: <br>`WHISPER_DEVICE=cuda` <br>`WHISPER_COMPUTE_TYPE=float16` |
+| **Local dev on CPU‑only laptop** | `.env`: `WHISPER_DEVICE=cpu` |
+| **Compose profile** | `docker compose --profile gpu up` <br>(`worker` service has a `gpu` profile that enables the NVIDIA runtime) |
+
+If `WHISPER_DEVICE=auto` (default) the app tries CUDA and falls back to CPU.
+
+> **Note:** On machines *without* the NVIDIA container runtime the GPU override
+> compose file must be omitted, or Docker will raise  
+> `could not select device driver "nvidia" with capabilities: [[gpu]]`.
+
+---
+
+## Low‑Bandwidth Deployment Strategy
 
 Developers might have fast internet; deployment site does **not**.
 Follow this checklist before heading off‑grid:
@@ -180,7 +208,7 @@ Follow this checklist before heading off‑grid:
 
 ---
 
-## ProductionDeployment
+## Production Deployment
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
@@ -198,7 +226,7 @@ docker compose ... up -d --build   # rebuilt layers stream from local cache
 
 ---
 
-## UpdatingDependencies
+## Updating Dependencies
 
 1. Change `requirements.*.txt`.
 2. On fast link:

@@ -1,4 +1,8 @@
-from config import WHISPER_MODEL_NAME
+from config import (
+    WHISPER_MODEL_NAME,
+    WHISPER_DEVICE,
+    WHISPER_COMPUTE_TYPE,
+)
 from faster_whisper import WhisperModel
 
 
@@ -13,8 +17,22 @@ class ModelLoader:
 
     @staticmethod
     def _load_model():
-        print(f"Using faster_whisper model: {WHISPER_MODEL_NAME}")
-        # You can set device="cuda" if CUDA is available, else "cpu"
-        # model = WhisperModel(WHISPER_MODEL_NAME, device="cuda" if WhisperModel.is_cuda_available() else "cpu")
-        model = WhisperModel(WHISPER_MODEL_NAME, device="cuda", compute_type="float16")
+        # Determine device
+        device = WHISPER_DEVICE
+        if device == "auto":
+            try:
+                import torch
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            except ImportError:
+                device = "cpu"
+
+        print(
+            f"Using faster_whisper model: {WHISPER_MODEL_NAME} "
+            f"on {device} (compute_type={WHISPER_COMPUTE_TYPE})"
+        )
+        model = WhisperModel(
+            WHISPER_MODEL_NAME,
+            device=device,
+            compute_type=WHISPER_COMPUTE_TYPE,
+        )
         return model
