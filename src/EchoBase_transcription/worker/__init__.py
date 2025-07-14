@@ -1,0 +1,1 @@
+"""Celery worker package – keeps global model singletons out of task code."""

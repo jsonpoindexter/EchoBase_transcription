@@ -7,4 +7,4 @@ services:
         BASE_IMAGE: echobase_transcription-worker:dev
     command: >
       watchmedo auto-restart --directory=/app --pattern='*.py' --recursive --
-        celery -A celery_worker worker --loglevel=info --pool=solo
+        celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=info --pool=solo

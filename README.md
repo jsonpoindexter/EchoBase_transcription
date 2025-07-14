@@ -60,7 +60,7 @@ deployment**.
 | Path | Purpose |
 |------|---------|
 | `Dockerfile.api` | Multi‑stage build for the Flask / SSE API |
-| `Dockerfile.worker.base` | CUDA+Python3.9 build stage (`base`, `dev`, `prod`) |
+| `Dockerfile.worker.base` | CUDA+python3.12 build stage (`base`, `dev`, `prod`) |
 | `Dockerfile.worker` | Final Celery worker image (copies code only) |
 | `docker-compose.yml` | Base compose (dev+ prod shared settings) |
 | `docker-compose.override.yml` | Dev‑only tweaks (hot reload, dev base) |
@@ -176,7 +176,7 @@ Follow this checklist before heading off‑grid:
    tar czf wheelhouse.tgz wheelhouse
 
    # large Docker layers
-   docker save python:3.9-slim \
+   docker save python:3.12-slim \
                echobase_transcription-worker:prod \
                echobase_api:prod \
      | xz -T0 -9 > echobase_images.tar.xz

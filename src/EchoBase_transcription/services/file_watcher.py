@@ -1,11 +1,10 @@
-# call_handler/call_handler.py
 import threading
 import time
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
-from config import WHISPER_INITIAL_PROMPT, WHISPER_LANGUAGE
-from celery_worker import transcribe_audio
+from ..config import settings
+from ..worker.tasks.transcribe import transcribe_audio_task
 
 
 class FileWatcher(FileSystemEventHandler):
@@ -24,11 +23,11 @@ class FileWatcher(FileSystemEventHandler):
         if not event.src_path.lower().endswith((".wav", ".mp3")):
             return
         print(f"{'Moved' if moved else 'Created'}: {event.src_path}", flush=True)
-        transcribe_audio.delay(
+        transcribe_audio_task.delay(
             file_name=event.src_path.split("/")[-1],
             file_path=event.src_path,
-            prompt=WHISPER_INITIAL_PROMPT,
-            language=WHISPER_LANGUAGE,
+            prompt=settings.whisper_initial_prompt,
+            language=settings.whisper_language,
         )
 
 

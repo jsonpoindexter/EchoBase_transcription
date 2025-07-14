@@ -10,19 +10,13 @@ services:
       - ${CALL_WATCH_PATH}:/app/recordings
     ports:
       - "${FLASK_PORT}:${FLASK_PORT}"
-    command:
-      - gunicorn
-      - "-k"
-      - gevent
-      - "-w"
-      - "2"
-      - "--reload"
-      - "-b"
-      - "0.0.0.0:${FLASK_PORT}"
-      - "main:create_app()"
+    command: >
+      gunicorn "EchoBase_transcription.api.app:create_app()"
+      -k gevent -w 2 --reload --log-level debug
+      --access-logfile -
+      -b 0.0.0.0:${FLASK_PORT}
     environment:
-      - FLASK_ENV=development
-      - FLASK_APP=main.py
+      - FLASK_ENV=development=
       - CALL_WATCH_PATH=/app/recordings
     depends_on:
       - worker
@@ -32,10 +26,13 @@ services:
       dockerfile: Dockerfile.worker
       args:
           BASE_IMAGE: echobase_transcription-worker:prod
-    command: celery -A celery_worker worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup
+    command: >
+      celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=debug --pool=solo -E --uid=nobody --gid=nogroup
     environment:
       - CELERY_WORKER_RUNNING=1
       - CELERYD_FORCE_EXECV=1
+      - WHISPER_CACHE_DIR=/models
+      - HF_HOME=/models/.cache
     volumes:
       - .:/app
       - model-data:/models
@@ -48,6 +45,16 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+  flower:
+    image: mher/flower
+    command: celery flower
+    working_dir: /data
+    ports:
+      - 5555:5555
+    environment:
+      CELERY_BROKER_URL: ${REDIS_URL}
+    depends_on:
+      - worker
   db:
     image: postgres:latest
     environment:

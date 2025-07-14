@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import String, Text, Integer, ForeignKey, UniqueConstraint, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from . import Base, Call
+from . import Base
 
 
 class System(Base):

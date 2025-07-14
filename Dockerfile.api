@@ -1,5 +1,5 @@
 # ---------- Builder stage ----------
-FROM python:3.9-slim@sha256:c2a0feb07dedbf91498883c2f8e1e5201e95c91d413e21c3bea780c8aad8e6a7 AS build
+FROM python:3.12-slim@sha256:4600f71648e110b005bf7bca92dbb335e549e6b27f2e83fceee5e11b3e1a4d01 AS build
 
 # System libs required only at build time (compile gevent & friends)
 RUN apt-get update && \
@@ -20,18 +20,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY . .
 
 # ---------- Runtime stage ----------
-FROM python:3.9-slim@sha256:c2a0feb07dedbf91498883c2f8e1e5201e95c91d413e21c3bea780c8aad8e6a7 AS runtime
+FROM python:3.12-slim@sha256:4600f71648e110b005bf7bca92dbb335e549e6b27f2e83fceee5e11b3e1a4d01 AS runtime
 
 WORKDIR /app
 
 # Copy only what we need from builder: site‑packages, entrypoints, and our app
-COPY --from=build /usr/local/lib/python3.9/site-packages \
-                  /usr/local/lib/python3.9/site-packages
+COPY --from=build /usr/local/lib/python3.12/site-packages \
+                  /usr/local/lib/python3.12/site-packages
 COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /app /app
 
 # Expose the application port
 EXPOSE 3000
 
+ENV PYTHONPATH=/app/src
+
 # Default command (can be overridden via docker‑compose)
-CMD ["gunicorn", "-k", "gevent", "-w", "4", "-b", "0.0.0.0:3000", "main:create_app()"]
+CMD ["gunicorn", "EchoBase_transcription.api.app:create_app", "--bind", "0.0.0.0:3000", "--worker-class", "gevent", "--workers", "2"]
