@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 
+from db.engine import DATABASE_URL
+
 # Load environment variables
 load_dotenv()
 
@@ -33,6 +35,10 @@ print(f"WHISPER_COMPUTE_TYPE: {WHISPER_COMPUTE_TYPE}")
 CALL_WATCH_PATH = os.getenv("CALL_WATCH_PATH")
 print(f"CALL_WATCH_PATH: {CALL_WATCH_PATH}")
 
+DATABASE_URL = os.getenv("DATABASE_URL", DATABASE_URL)
+print(f"DATABASE_URL: {DATABASE_URL}")
+
+
 # -------------------------------------------------
 #  Flask configuration objects
 # -------------------------------------------------
@@ -49,6 +55,7 @@ class BaseConfig:
     WHISPER_COMPUTE_TYPE = WHISPER_COMPUTE_TYPE
     WHISPER_DEVICE = WHISPER_DEVICE
     CALL_WATCH_PATH = CALL_WATCH_PATH
+    DATABASE_URL = DATABASE_URL
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
