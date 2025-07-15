@@ -39,6 +39,11 @@ def create_app() -> Flask:
     # ------------------------------- Extensions ---------------------------- #
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
+    static_dir = Path(__file__).parent / "static"
+    os.makedirs(static_dir, exist_ok=True)
+    app.static_folder = str(static_dir)
+    app.static_url_path = "/static"
+
     # ------------------------------ Blueprints ----------------------------- #
     from .routes.health import bp as health_bp
     from .routes.transcribe import bp as transcribe_bp
@@ -49,17 +54,11 @@ def create_app() -> Flask:
     app.register_blueprint(stream_bp, url_prefix=add_base_path(""))
 
     # -------------------------- Swagger generation ------------------------- #
-    static_dir = Path(app.instance_path).parent / "static"
     swagger_destination_path = static_dir / "swagger.yaml"
-    os.makedirs(static_dir, exist_ok=True)
     swagger_gen.generate_swagger(app, destination_path=str(swagger_destination_path))
-
-    app.static_folder = str(static_dir)
-    app.static_url_path = "/static"
-
     swagger_ui = get_swaggerui_blueprint(
         "/docs",
-        "/static/swagger.yaml",  # URL path to the swagger file
+        "/static/swagger.yaml",
         config={"app_name": "EchoBase API Docs", "docExpansion": "none"},
     )
     app.register_blueprint(swagger_ui, url_prefix="/docs")
