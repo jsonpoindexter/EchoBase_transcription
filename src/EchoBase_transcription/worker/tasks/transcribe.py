@@ -7,12 +7,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from ...db.schemas import CallCreate
 from ...worker.celery_app import celery_app
 from ...config import settings
 from ...db import get_session
-from ...db.models import Call
 from ...events import publish_call_event, CallEvent
 from ...services.whisper import segment_confidence
+from ...db.models import Call
 
 # from ...services.whisper import make_prompt
 
@@ -52,21 +53,24 @@ def transcribe_audio_task(
 
     # ------------------- 2. Persist in DB ---------------------------------- #
     with get_session() as db:
-        call = Call(
-            # TODO: supply the real IDs, timestamp, exc from the API/file-watcher layer
-            system_id=None,
-            talkgroup_id=None,
-            unit_id=None,
-            timestamp=datetime.utcnow(),
+        # Build a Pydantic DTO for validation first …
+        payload = CallCreate(
+            system_id=1,
+            talkgroup_id=1,
+            unit_id=1,
+            timestamp=datetime.now(),
             duration=info.duration,
             audio_path=str(audio_fp),
             transcript=text,
-            confidence=confidence,
+            confidence=overall_confidence,
             needs_review=needs_review,
             transcriber=settings.whisper_model_name,
         )
+
+        call = Call(**payload.model_dump())  # type: ignore[arg-type]
+
         db.add(call)
-        db.flush()  # get call.id
+        db.flush()  # assigns call.id
 
         # ---------------- 3. Publish event for SSE ------------------------- #
         publish_call_event(
