@@ -6,8 +6,10 @@ COPY requirements.worker.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
    python3 -m pip install --no-cache-dir -r requirements.worker.txt
 
-COPY . .
+COPY --chown=celery:celery . .
 
 ENV PYTHONPATH=/app/src
+
+USER celery
 
 CMD ["sleep", "infinity"]

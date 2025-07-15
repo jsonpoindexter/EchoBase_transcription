@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # Flask / API
     # --------------------------------------------------------------------- #
     api_key: str = Field(..., validation_alias="FLASK_API_KEY")
-    flask_port: int = Field(3000, validation_alias="FLASK_PORT")
+    API_PORT: int = Field(3000, validation_alias="API_PORT")
     base_path: str = Field("", validation_alias="FLASK_BASE_PATH")
     rate_limit: str = Field("60/minute", validation_alias="FLASK_RATE_LIMIT")
 

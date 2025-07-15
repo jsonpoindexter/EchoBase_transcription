@@ -1,10 +1,14 @@
-import uuid
-from flask import Blueprint
-from ...api.sse import create_call_stream_response
+"""Server‑Sent Events endpoint for live transcription updates (FastAPI)."""
 
-bp = Blueprint("stream", __name__)
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+
+from ..sse import create_call_stream_response
+
+router = APIRouter()
 
 
-@bp.route("/transcription/events")
-def transcription_events():
+@router.get("/transcription/events", response_class=StreamingResponse)
+async def transcription_events() -> StreamingResponse:  # noqa: D401
+    """Return an SSE stream of CallEvent objects."""
     return create_call_stream_response()

@@ -1,40 +1,42 @@
+"""Upload endpoint that queues a Celery transcription task (FastAPI)."""
+
+from __future__ import annotations
+
 from pathlib import Path
 from uuid import uuid4
 
 import mutagen
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, File, UploadFile, HTTPException, status
 
-from ...worker.tasks.transcribe import transcribe_audio_task
 from ...config.settings import settings
+from ...worker.tasks.transcribe import transcribe_audio_task
 
-bp = Blueprint("transcribe", __name__)
+router = APIRouter()
 
 TEMP_DIR = Path(settings.temp_audio_path)
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
-@bp.route("/transcribe", methods=["POST"])
-def handle_transcribe_audio():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files["file"]
+@router.post("/transcribe", status_code=status.HTTP_202_ACCEPTED)
+async def handle_transcribe_audio(file: UploadFile = File(...)) -> dict[str, str]:
+    """Accept a WAV/MP3 file, save to disk, enqueue Celery task, return task ID."""
     file_path = TEMP_DIR / f"{uuid4()}_{file.filename}"
-    file.save(file_path)
+    file_path.write_bytes(await file.read())
 
-    if file_path.suffix.lower() not in (".wav", ".mp3"):
-        return jsonify({"error": "Unsupported file type"}), 400
+    if file_path.suffix.lower() not in {".wav", ".mp3"}:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
     try:
         if mutagen.File(file_path) is None:
             raise ValueError
     except Exception:
-        return jsonify({"error": "Invalid audio file"}), 400
+        raise HTTPException(status_code=400, detail="Invalid audio file")
 
-    print(f"Received file: {file.filename}, saved to {file_path}")
-    task = transcribe_audio_task.delay(  # Celery task
+    task = transcribe_audio_task.delay(
         file.filename,
         str(file_path),
         prompt=settings.whisper_initial_prompt,
         language=settings.whisper_language,
     )
-    return jsonify({"message": "Transcription started", "taskId": task.id}), 202
+
+    return {"message": "Transcription started", "taskId": task.id}

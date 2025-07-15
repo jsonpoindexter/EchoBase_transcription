@@ -78,8 +78,8 @@ Create a file named **`.env`** at repo root:
 ```dotenv
 # Flask
 FLASK_API_KEY=changeme
-FLASK_PORT=3000
-FLASK_ENV=development        # overridden to production in prod compose
+API_PORT=3000
+API_ENV=development        # overridden to production in prod compose
 FLASK_RATE_LIMIT=300/minute
 
 # Whisper

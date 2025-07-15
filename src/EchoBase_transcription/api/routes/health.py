@@ -1,9 +1,11 @@
-from flask import Blueprint, jsonify
-from ...api.app import add_base_path, swagger_gen
+"""Health‑check endpoint (FastAPI version)."""
 
-bp = Blueprint("health", __name__)
+from fastapi import APIRouter
 
-@bp.route(add_base_path("/health"), methods=["GET"])
-@swagger_gen.response(status_code=200, schema={"status": "ok"})
-def health():
-    return jsonify({"status": "ok"}), 200
+router = APIRouter()
+
+
+@router.get("/health", response_model=dict[str, str])
+async def health() -> dict[str, str]:
+    """Return a simple liveness probe."""
+    return {"status": "ok"}

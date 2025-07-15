@@ -1,85 +1,71 @@
+"""FastAPI application factory and instance for EchoBase Transcription."""
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
-
-from flask import Flask, jsonify
-from werkzeug.middleware.proxy_fix import ProxyFix
-from werkzeug.exceptions import HTTPException, ClientDisconnected
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 
 from ..config.settings import settings
 from ..services.file_watcher import start_file_watcher
 
-# ---- Swagger / OpenAPI ----
-from flask_swagger_generator.generators import Generator
-from flask_swagger_generator.utils import SwaggerVersion
-from flask_swagger_ui import get_swaggerui_blueprint
-
-# create the generator once
-swagger_gen = Generator.of(SwaggerVersion.VERSION_THREE)
-current_directory = os.getcwd()
 
 def add_base_path(route: str) -> str:
-    """Prefix every route with settings.base_path ('' in dev)."""
-    if not settings.base_path:
-        return route
-    return f"/{settings.base_path}{route}"
+    """Prefix each route with settings.base_path ('' in dev)."""
+    return f"/{settings.base_path.strip('/')}{route}" if settings.base_path else route
 
 
-def create_app() -> Flask:
-    """Application factory – importable by gunicorn / Celery tests."""
-    app = Flask(__name__)
-    app.config.update(
-        ENV=settings.env,
-        DEBUG=True,
-        JSON_SORT_KEYS=False,
-        MAX_CONTENT_LENGTH=100 * 1024 * 1024,  # 100 MB upload cap
+def create_app() -> FastAPI:  # noqa: D401
+    """Return a configured FastAPI app."""
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):  # noqa: D401
+        """Startup/Shutdown context for FastAPI 0.110+."""
+        if settings.call_watch_path:
+            if not (settings.env == "development" and os.environ.get("RUN_MAIN") == "true"):
+                # avoid double-start when uvicorn reloads
+                start_file_watcher(settings.call_watch_path)
+        yield
+        # (optional) add any shutdown cleanup here
+
+    app = FastAPI(
+        title="EchoBase Transcription API",
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        root_path=f"/{settings.base_path.strip('/')}" if settings.base_path else "",
+        lifespan=lifespan,
     )
 
-    # ------------------------------- Extensions ---------------------------- #
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+    # ----------------------------- Middleware ----------------------------- #
+    app.add_middleware(GZipMiddleware, minimum_size=1_000)
 
+    # ------------------------------- Static ------------------------------- #
     static_dir = Path(__file__).parent / "static"
-    os.makedirs(static_dir, exist_ok=True)
-    app.static_folder = str(static_dir)
-    app.static_url_path = "/static"
+    static_dir.mkdir(exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    # ------------------------------ Blueprints ----------------------------- #
-    from .routes.health import bp as health_bp
-    from .routes.transcribe import bp as transcribe_bp
-    from .routes.stream import bp as stream_bp
+    # ------------------------------ Routers ------------------------------ #
+    from .routes.health import router as health_router  # FastAPI routers
+    from .routes.transcribe import router as transcribe_router
+    from .routes.stream import router as stream_router
 
-    app.register_blueprint(health_bp, url_prefix=add_base_path(""))
-    app.register_blueprint(transcribe_bp, url_prefix=add_base_path(""))
-    app.register_blueprint(stream_bp, url_prefix=add_base_path(""))
+    app.include_router(health_router, prefix=add_base_path(""))
+    app.include_router(transcribe_router, prefix=add_base_path(""))
+    app.include_router(stream_router, prefix=add_base_path(""))
 
-    # -------------------------- Swagger generation ------------------------- #
-    swagger_destination_path = static_dir / "swagger.yaml"
-    swagger_gen.generate_swagger(app, destination_path=str(swagger_destination_path))
-    swagger_ui = get_swaggerui_blueprint(
-        "/docs",
-        "/static/swagger.yaml",
-        config={"app_name": "EchoBase API Docs", "docExpansion": "none"},
-    )
-    app.register_blueprint(swagger_ui, url_prefix="/docs")
+    # -------------------------- Exception handler ------------------------- #
+    @app.exception_handler(Exception)
+    async def _unhandled(request, exc):  # noqa: ANN001
+        """Catch-all: log & return JSON 500."""
+        import logging
 
-    # ------------------------- File-watcher startup ------------------------ #
-    if settings.call_watch_path and (
-        not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
-    ):
-        app.logger.info(f"Watching for new audio files in {settings.call_watch_path}")
-        start_file_watcher(settings.call_watch_path)
-
-    # -------------------------- Error handlers ----------------------------- #
-    @app.errorhandler(Exception)
-    def handle_any_exc(exc):  # noqa: ANN001
-        if isinstance(exc, HTTPException):
-            return exc
-        app.logger.exception("Unhandled exception: %s", exc)
-        return jsonify({"error": str(exc)}), 500
-
-    @app.errorhandler(ClientDisconnected)
-    def handle_disconnect(_: ClientDisconnected):  # noqa: D401
-        return jsonify({"error": "Connection closed before upload finished"}), 400
+        logging.getLogger("uvicorn.error").exception("Unhandled exception: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
 
     return app
+
+app = create_app()

@@ -35,5 +35,5 @@ EXPOSE 3000
 
 ENV PYTHONPATH=/app/src
 
-# Default command (can be overridden via docker‑compose)
-CMD ["gunicorn", "EchoBase_transcription.api.app:create_app", "--bind", "0.0.0.0:3000", "--worker-class", "gevent", "--workers", "2"]
+# Default command for FastAPI with Uvicorn
+CMD ["uvicorn", "EchoBase_transcription.api.app:app", "--host", "0.0.0.0", "--port", "3000"]

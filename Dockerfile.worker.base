@@ -1,4 +1,4 @@
-ARG CUDA_BASE=nvidia/cuda:12.9.1-cudnn-devel-ubuntu22.04
+ARG CUDA_BASE=nvidia/cuda:12.9.1-cudnn-devel-ubuntu22.04@sha256:55f18a78e40e339c7b47f4a38e7a2c97b81a3e75779cc5e20c7d5c7e475a5c16
 FROM ${CUDA_BASE} AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -13,6 +13,11 @@ RUN apt-get update && \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
     update-ca-certificates
+
+# Create celery user with UID 1000
+RUN groupadd -g 1000 celery && \
+    useradd -u 1000 -g celery -m -s /bin/bash celery && \
+    chown -R celery:celery /app
 
 # ---- Development image ----
 FROM base AS dev

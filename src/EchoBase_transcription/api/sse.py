@@ -1,13 +1,14 @@
 # src/EchoBase_transcription/api/sse.py
-"""Utility to turn event objects into Server-Sent Events responses."""
+"""Utility to turn event objects into Server‑Sent Events responses (FastAPI)."""
 
 from __future__ import annotations
 
 import json
 import uuid
+import time
 from typing import Generator
 
-from flask import Response, stream_with_context
+from fastapi.responses import StreamingResponse
 
 from ..events import subscribe_call_events, CallEvent
 
@@ -19,14 +20,12 @@ def _serialize_event(evt: CallEvent) -> str:
     return evt.model_dump_json()
 
 
-def create_call_stream_response() -> Response:
+def create_call_stream_response() -> StreamingResponse:
     """Flask Response emitting live CallEvent SSE."""
     client_id = uuid.uuid4().hex
     event_iter = subscribe_call_events()
 
     def _stream() -> Generator[str, None, None]:
-        import time
-
         last_heartbeat = time.time()
         for evt in event_iter:
             # Filter here if you need per-request scoping
@@ -39,4 +38,4 @@ def create_call_stream_response() -> Response:
                 yield ": heartbeat\n\n"
                 last_heartbeat = time.time()
 
-    return Response(stream_with_context(_stream()), mimetype="text/event-stream")
+    return StreamingResponse(_stream(), media_type="text/event-stream")

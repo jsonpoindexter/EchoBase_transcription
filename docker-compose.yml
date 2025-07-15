@@ -9,14 +9,12 @@ services:
       - temp-data:/app/temp
       - ${CALL_WATCH_PATH}:/app/recordings
     ports:
-      - "${FLASK_PORT}:${FLASK_PORT}"
+      - "${API_PORT}:${API_PORT}"
     command: >
-      gunicorn "EchoBase_transcription.api.app:create_app()"
-      -k gevent -w 2 --reload --log-level debug
-      --access-logfile -
-      -b 0.0.0.0:${FLASK_PORT}
+      uvicorn EchoBase_transcription.api.app:app
+      --host 0.0.0.0 --port ${API_PORT} --reload --log-level debug
     environment:
-      - FLASK_ENV=development
+      - API_ENV=development
       - CALL_WATCH_PATH=/app/recordings
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
@@ -28,7 +26,7 @@ services:
       args:
           BASE_IMAGE: echobase_transcription-worker:prod
     command: >
-      celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=debug --pool=solo -E --uid=nobody --gid=nogroup
+      celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=info --pool=solo -E
     environment:
       - CELERY_WORKER_RUNNING=1
       - CELERYD_FORCE_EXECV=1

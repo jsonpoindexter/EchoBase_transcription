@@ -1,19 +1,16 @@
 services:
   api:
     command:
-      - gunicorn
-      - "-k"
-      - gevent
-      - "-w"
-      - "2"
-      - "--reload"
-      - "-b"
-      - "0.0.0.0:${FLASK_PORT}"
-      - "EchoBase_transcription.api.app:create_app"
+      - uvicorn
+      - "EchoBase_transcription.api.app:app"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "${API_PORT}"
     environment:
-      - FLASK_ENV=production
+      - API_ENV=production
   worker:
     build:
       args:
         BASE_IMAGE: echobase_transcription-worker:prod
-    command: celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=info --pool=solo --uid=nobody --gid=nogroup
+    command: celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=info --pool=solo
