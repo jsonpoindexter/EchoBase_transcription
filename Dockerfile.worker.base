@@ -19,6 +19,11 @@ RUN groupadd -g 1000 celery && \
     useradd -u 1000 -g celery -m -s /bin/bash celery && \
     chown -R celery:celery /app
 
+# Ensure model cache directory exists and is writable by the celery user
+RUN mkdir -p /models && \
+    chown -R celery:celery /models
+
+
 # ---- Development image ----
 FROM base AS dev
 RUN --mount=type=cache,target=/root/.cache/pip \

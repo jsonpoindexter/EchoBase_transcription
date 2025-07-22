@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     whisper_initial_prompt: str = Field("", validation_alias="WHISPER_INITIAL_PROMPT")
     whisper_device: str = Field("auto", validation_alias="WHISPER_DEVICE")
     whisper_compute_type: Optional[str] = Field(None, validation_alias="WHISPER_COMPUTE_TYPE")
+    whisper_cache_dir: str = Field("/models", validation_alias="WHISPER_CACHE_DIR")
 
     # --------------------------------------------------------------------- #
     # Files & paths

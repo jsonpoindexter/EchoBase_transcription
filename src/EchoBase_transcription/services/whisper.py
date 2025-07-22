@@ -1,5 +1,4 @@
 import math
-import os
 from pathlib import Path
 
 from ..config import settings
@@ -32,8 +31,7 @@ class ModelLoader:
                 device = "cpu"
 
         # Set model cache directory
-        cache_dir = os.environ.get("WHISPER_CACHE_DIR", "/models")
-        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        Path(settings.whisper_cache_dir).mkdir(parents=True, exist_ok=True)
 
         print(
             f"Using faster_whisper model: {settings.whisper_model_name} "
@@ -46,7 +44,7 @@ class ModelLoader:
                 settings.whisper_model_name,
                 device=device,
                 compute_type=settings.whisper_compute_type,
-                download_root=cache_dir,
+                download_root=settings.whisper_cache_dir,
                 local_files_only=True
             )
             print("Model loaded from local cache")
@@ -58,7 +56,7 @@ class ModelLoader:
                     settings.whisper_model_name,
                     device=device,
                     compute_type=settings.whisper_compute_type,
-                    download_root=cache_dir,
+                    download_root=settings.whisper_cache_dir,
                     local_files_only=False
                 )
                 print("Model downloaded successfully")

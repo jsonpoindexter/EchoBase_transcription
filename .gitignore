@@ -2,5 +2,4 @@
 .env
 /static/swagger.yaml
 /temp/*
-models
-
+/models/
