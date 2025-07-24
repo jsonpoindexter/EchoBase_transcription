@@ -13,7 +13,6 @@ from ...config import settings
 from ...db import get_session
 from ...events import publish_call_event, CallEvent
 from ...services.whisper import segment_confidence
-from ...db.models import Call
 
 # from ...services.whisper import make_prompt
 

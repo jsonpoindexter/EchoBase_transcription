@@ -53,10 +53,12 @@ def create_app() -> FastAPI:  # noqa: D401
     from .routes.health import router as health_router  # FastAPI routers
     from .routes.transcribe import router as transcribe_router
     from .routes.stream import router as stream_router
+    from .routes.system import router as system_router
 
     app.include_router(health_router, prefix=add_base_path(""))
     app.include_router(transcribe_router, prefix=add_base_path(""))
     app.include_router(stream_router, prefix=add_base_path(""))
+    app.include_router(system_router, prefix=add_base_path(""))
 
     # -------------------------- Exception handler ------------------------- #
     @app.exception_handler(Exception)

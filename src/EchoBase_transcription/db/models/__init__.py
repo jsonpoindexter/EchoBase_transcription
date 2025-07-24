@@ -6,5 +6,4 @@ class Base(DeclarativeBase):
     """Project‑wide declarative base class."""
     pass
 
-from .core import System, TalkGroup, RadioUnit, User
-from .call import Call
+from .core import System, TalkGroup, RadioUnit, User, Call
