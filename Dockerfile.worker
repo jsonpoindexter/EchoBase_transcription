@@ -1,15 +1,26 @@
-ARG BASE_IMAGE=echobase_transcription-worker:dev
+ARG BASE_IMAGE=echobase_transcription-worker:prod
 FROM ${BASE_IMAGE}
 
-COPY requirements.worker.txt .
+# System deps for dropping privileges
+RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
+COPY requirements.worker.txt /app/requirements.worker.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-   python3 -m pip install --no-cache-dir -r requirements.worker.txt
+    python3 -m pip install --no-cache-dir -r /app/requirements.worker.txt
 
-COPY --chown=celery:celery . .
+# Put your code in /app (already done by your compose bind mount)
+COPY --chown=root:root . /app
+WORKDIR /app
 
-ENV PYTHONPATH=/app/src
+# Point cache paths into /models (the shared volume)
+ENV PYTHONPATH=/app/src \
+    WHISPER_CACHE_DIR=/models \
+    HUGGINGFACE_HUB_CACHE=/models/hf-cache \
+    HF_HOME=/models/.hf-home
 
-USER celery
+COPY worker-entrypoint.sh /usr/local/bin/worker-entrypoint.sh
+RUN chmod +x /usr/local/bin/worker-entrypoint.sh
 
-CMD ["sleep", "infinity"]
+ENTRYPOINT ["/usr/local/bin/worker-entrypoint.sh"]
+# run celery by default; entrypoint will drop to the celery user
+CMD ["celery","-A","EchoBase_transcription.worker.celery_app.celery_app","worker","--loglevel=info","--pool=solo","-E"]

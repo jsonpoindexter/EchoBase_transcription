@@ -24,14 +24,15 @@ services:
       context: .
       dockerfile: Dockerfile.worker
       args:
-          BASE_IMAGE: echobase_transcription-worker:prod
+        BASE_IMAGE: echobase_transcription-worker:prod
     command: >
       celery -A EchoBase_transcription.worker.celery_app.celery_app worker --loglevel=info --pool=solo -E
     environment:
       - CELERY_WORKER_RUNNING=1
       - CELERYD_FORCE_EXECV=1
       - WHISPER_CACHE_DIR=/models
-      - HF_HOME=/models/.cache
+      - HF_HOME=/models/.hf-home
+      - HUGGINGFACE_HUB_CACHE=/models/hf-cache
     volumes:
       - .:/app
       - model-data:/models
