@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from uuid import uuid4
-
 import mutagen
 from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from pathlib import Path
+from uuid import uuid4
 
 from ...config.settings import settings
 from ...worker.tasks.transcribe import transcribe_audio_task

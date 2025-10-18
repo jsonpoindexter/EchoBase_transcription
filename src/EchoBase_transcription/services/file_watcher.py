@@ -33,7 +33,8 @@ class FileWatcher(FileSystemEventHandler):
 
 def start_file_watcher(path: str) -> threading.Thread:
     """Start the observer in a daemon thread and return the thread object."""
-    observer = Observer(timeout=.3)
+    print(f"Starting file watcher on: {path}", flush=True)
+    observer = Observer()
     observer.schedule(FileWatcher(), path, recursive=True)
     observer.start()
 
