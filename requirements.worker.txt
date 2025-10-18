@@ -1,7 +1,7 @@
 celery==5.4.0
 python-dotenv==1.1.1
 redis==5.0.0b2
-faster-whisper==1.1.1
+faster-whisper==1.2.0
 SQLAlchemy==2.0.41
 pydantic==2.11.7
 pydantic-settings==2.10.1
