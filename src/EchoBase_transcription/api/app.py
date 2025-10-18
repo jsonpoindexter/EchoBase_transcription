@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from ..config.settings import settings
 from ..services.file_watcher import start_file_watcher
@@ -21,13 +21,14 @@ def add_base_path(route: str) -> str:
 
 def create_app() -> FastAPI:  # noqa: D401
     """Return a configured FastAPI app."""
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):  # noqa: D401
         """Startup/Shutdown context for FastAPI 0.110+."""
-        if settings.call_watch_path:
-            if not (settings.env == "development" and os.environ.get("RUN_MAIN") == "true"):
-                # avoid double-start when uvicorn reloads
-                start_file_watcher(settings.call_watch_path)
+        # if settings.call_watch_path:
+        #     if not (settings.env == "development" and os.environ.get("RUN_MAIN") == "true"):
+        #         # avoid double-start when uvicorn reloads
+        #         start_file_watcher(settings.call_watch_path)
         yield
         # (optional) add any shutdown cleanup here
 
@@ -67,5 +68,6 @@ def create_app() -> FastAPI:  # noqa: D401
         return JSONResponse({"error": str(exc)}, status_code=500)
 
     return app
+
 
 app = create_app()
