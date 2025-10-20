@@ -14,6 +14,8 @@ from ...db import get_session
 from ...events import publish_call_event, CallEvent
 from ...services.whisper import segment_confidence
 
+from ...db.models import Call
+
 # from ...services.whisper import make_prompt
 
 # ----------------------- Load Whisper *once* per worker -------------------- #
@@ -26,13 +28,14 @@ if __name__ == "__main__" or os.environ.get("CELERY_WORKER_RUNNING") == "1":
 else:
     whisper_model = None  # Not loaded in Flask app
 
+
 @celery_app.task(name="transcribe_audio", bind=True)
 def transcribe_audio_task(
-    self,  # Celery task instance
-    file_name: str,
-    file_path: str,
-    prompt: Optional[str] = None,
-    language: Optional[str] = None,
+        self,  # Celery task instance
+        file_name: str,
+        file_path: str,
+        prompt: Optional[str] = None,
+        language: Optional[str] = None,
 ) -> dict:
     """Transcribe an audio file and persist the Call row."""
     audio_fp = Path(file_path)
