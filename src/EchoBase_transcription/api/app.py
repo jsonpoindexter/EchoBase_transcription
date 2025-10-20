@@ -11,7 +11,6 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from ..config.settings import settings
-from ..services.file_watcher import start_file_watcher
 
 
 def add_base_path(route: str) -> str:
@@ -25,10 +24,6 @@ def create_app() -> FastAPI:  # noqa: D401
     @asynccontextmanager
     async def lifespan(app: FastAPI):  # noqa: D401
         """Startup/Shutdown context for FastAPI 0.110+."""
-        # if settings.call_watch_path:
-        #     if not (settings.env == "development" and os.environ.get("RUN_MAIN") == "true"):
-        #         # avoid double-start when uvicorn reloads
-        #         start_file_watcher(settings.call_watch_path)
         yield
         # (optional) add any shutdown cleanup here
 
