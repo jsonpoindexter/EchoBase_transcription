@@ -5,7 +5,8 @@ from src.EchoBase_transcription.db import get_session
 from src.EchoBase_transcription.db.models import TalkGroup
 from src.EchoBase_transcription.db.schemas import TalkGroupRead
 
-router = APIRouter
+router = APIRouter()
+
 
 @router.get("/talkgroups", status_code=status.HTTP_200_OK, response_model=list[TalkGroupRead])
 async def handle_get_talkgroups():
