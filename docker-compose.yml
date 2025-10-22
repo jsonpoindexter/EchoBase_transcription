@@ -34,6 +34,7 @@ services:
       - WHISPER_CACHE_DIR=/models
       - HF_HOME=/models/.hf-home
       - HUGGINGFACE_HUB_CACHE=/models/hf-cache
+      - CALL_WATCH_PATH=/app/recordings
     volumes:
       - .:/app
       - model-data:/models

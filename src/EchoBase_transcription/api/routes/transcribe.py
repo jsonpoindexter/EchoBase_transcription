@@ -7,6 +7,8 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, status
 from pathlib import Path
 from uuid import uuid4
 
+from pydantic import BaseModel
+
 from ...config.settings import settings
 from ...worker.tasks.transcribe import transcribe_audio_task
 
@@ -34,6 +36,43 @@ async def handle_transcribe_audio(file: UploadFile = File(...)) -> dict[str, str
     task = transcribe_audio_task.delay(
         file.filename,
         str(file_path),
+        prompt=settings.whisper_initial_prompt,
+        language=settings.whisper_language,
+    )
+
+    return {"message": "Transcription started", "taskId": task.id}
+
+
+class InternalTranscribeRequest(BaseModel):
+    file_name: str
+
+
+@router.post("/internal/transcribe", status_code=status.HTTP_202_ACCEPTED)
+async def handle_internal_transcribe_audio(
+        request: InternalTranscribeRequest) -> dict[str, str]:
+    """Accept a WAV/MP3 file name and reference the binded SDRTrunk recording diretory (CALL_WATCH_PATH), enqueue Celery task, return task ID."""
+
+    file_name = request.file_name
+
+    print(f"Internal transcribe request for file: {file_name}")
+
+    if Path(file_name).suffix.lower() not in {".wav", ".mp3"}:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
+    # Resolve full path and validate existence/content
+    full_path = Path(settings.call_watch_path) / file_name
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        if mutagen.File(str(full_path)) is None:
+            raise ValueError
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid audio file")
+
+    task = transcribe_audio_task.delay(
+        file_name,
+        file_path=str(full_path),
         prompt=settings.whisper_initial_prompt,
         language=settings.whisper_language,
     )
