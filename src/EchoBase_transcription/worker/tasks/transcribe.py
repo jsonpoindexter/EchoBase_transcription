@@ -14,7 +14,8 @@ from ...db import get_session
 from ...events import publish_call_event, CallEvent
 from ...services.whisper import segment_confidence
 
-from ...db.models import Call
+from ...db.models import Call, TalkGroup, RadioUnit
+from sqlalchemy import select
 
 # from ...services.whisper import make_prompt
 
@@ -34,6 +35,9 @@ def transcribe_audio_task(
         self,  # Celery task instance
         file_name: str,
         file_path: str,
+        tg_number: Optional[int] = None,
+        unit_id: Optional[int] = None,
+        system_id: int = 1,  # TODO
         prompt: Optional[str] = None,
         language: Optional[str] = None,
 ) -> dict:
@@ -55,11 +59,35 @@ def transcribe_audio_task(
 
     # ------------------- 2. Persist in DB ---------------------------------- #
     with get_session() as db:
+        # if unit_id is not present in radio_units table in db then insert it
+        if unit_id is not None:
+            existing_unit = db.execute(
+                select(RadioUnit.id).where(RadioUnit.unit_id == unit_id)
+            ).scalar_one_or_none()
+            if existing_unit is None:
+                print(f"No unit with id {unit_id}")
+                new_unit = RadioUnit(unit_id=unit_id, system_id=system_id)
+                db.add(new_unit)
+                db.flush()
+                print(f"Created new RadioUnit with id {new_unit.id}")
+                unit_id = new_unit.id
+            else:
+                print(f"RadioUnit with unit_id {unit_id} already exists in DB.")
+                unit_id = existing_unit
+
         # Build a Pydantic DTO for validation first …
+        talkgroup_id: int | None = None
+        if tg_number is not None:
+            talkgroup_id = db.execute(
+                select(TalkGroup.id).where(
+                    TalkGroup.system_id == system_id,
+                    TalkGroup.tg_number == tg_number,
+                )
+            ).scalar_one_or_none()
         payload = CallCreate(
             system_id=1,
-            talkgroup_id=1,
-            unit_id=1,
+            talkgroup_id=talkgroup_id,
+            unit_id=unit_id,
             timestamp=datetime.now(),
             duration=info.duration,
             audio_path=str(audio_fp),

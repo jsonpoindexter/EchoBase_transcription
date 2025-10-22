@@ -45,6 +45,10 @@ async def handle_transcribe_audio(file: UploadFile = File(...)) -> dict[str, str
 
 class InternalTranscribeRequest(BaseModel):
     file_name: str
+    timestamp: str | None = None
+    site: str | None = None
+    source_id: str | None = None
+    destination_id: str | None = None
 
 
 @router.post("/internal/transcribe", status_code=status.HTTP_202_ACCEPTED)
@@ -52,7 +56,12 @@ async def handle_internal_transcribe_audio(
         request: InternalTranscribeRequest) -> dict[str, str]:
     """Accept a WAV/MP3 file name and reference the binded SDRTrunk recording diretory (CALL_WATCH_PATH), enqueue Celery task, return task ID."""
 
+    print(f"Received internal transcribe request: {request}")
     file_name = request.file_name
+    timestamp = request.timestamp
+    site = request.site
+    source_id = request.source_id
+    destination_id = request.destination_id
 
     print(f"Internal transcribe request for file: {file_name}")
 
@@ -75,6 +84,9 @@ async def handle_internal_transcribe_audio(
         file_path=str(full_path),
         prompt=settings.whisper_initial_prompt,
         language=settings.whisper_language,
+        # timestamp=timestamp, TODO
+        tg_number=int(destination_id) if destination_id and destination_id.isdigit() else None,
+        unit_id=int(source_id) if source_id and source_id.isdigit() else None
     )
 
     return {"message": "Transcription started", "taskId": task.id}
