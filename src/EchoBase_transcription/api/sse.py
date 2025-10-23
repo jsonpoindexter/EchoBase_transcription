@@ -1,6 +1,3 @@
-# src/EchoBase_transcription/api/sse.py
-"""Utility to turn event objects into Server‑Sent Events responses (FastAPI)."""
-
 from __future__ import annotations
 
 import json
@@ -26,6 +23,11 @@ def create_call_stream_response() -> StreamingResponse:
     event_iter = subscribe_call_events()
 
     def _stream() -> Generator[str, None, None]:
+        # send a one-time "connected" event immediately on connect
+        yield f"id: {client_id}\n"
+        yield "event: connected\n"
+        yield f"data: {json.dumps({'client_id': client_id})}\n\n"
+
         last_heartbeat = time.time()
         for evt in event_iter:
             # Filter here if you need per-request scoping
