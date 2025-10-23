@@ -6,6 +6,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -38,6 +39,14 @@ def create_app() -> FastAPI:  # noqa: D401
 
     # ----------------------------- Middleware ----------------------------- #
     app.add_middleware(GZipMiddleware, minimum_size=1_000)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # allow any origin
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # ------------------------------- Static ------------------------------- #
     static_dir = Path(__file__).parent / "static"
