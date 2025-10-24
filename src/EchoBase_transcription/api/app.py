@@ -35,6 +35,7 @@ def create_app() -> FastAPI:  # noqa: D401
         redoc_url="/redoc",
         root_path=f"/{settings.base_path.strip('/')}" if settings.base_path else "",
         lifespan=lifespan,
+        debug=True
     )
 
     # ----------------------------- Middleware ----------------------------- #
