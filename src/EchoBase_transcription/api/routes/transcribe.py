@@ -45,10 +45,10 @@ async def handle_transcribe_audio(file: UploadFile = File(...)) -> dict[str, str
 
 class InternalTranscribeRequest(BaseModel):
     file_name: str
-    timestamp: str | None = None
+    timestamp: str
     site: str | None = None
-    source_id: str | None = None
-    destination_id: str | None = None
+    source_id: str
+    destination_id: str
 
 
 @router.post("/internal/transcribe", status_code=status.HTTP_202_ACCEPTED)
@@ -84,7 +84,7 @@ async def handle_internal_transcribe_audio(
         file_path=str(full_path),
         prompt=settings.whisper_initial_prompt,
         language=settings.whisper_language,
-        # timestamp=timestamp, TODO
+        timestamp=timestamp,
         tg_number=int(destination_id) if destination_id and destination_id.isdigit() else None,
         unit_id=int(source_id) if source_id and source_id.isdigit() else None
     )

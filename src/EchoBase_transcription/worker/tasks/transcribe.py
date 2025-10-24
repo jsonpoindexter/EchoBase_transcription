@@ -35,6 +35,7 @@ def transcribe_audio_task(
         self,  # Celery task instance
         file_name: str,
         file_path: str,
+        timestamp: datetime,
         tg_number: Optional[int] = None,
         unit_id: Optional[int] = None,
         system_id: int = 1,  # TODO
@@ -88,7 +89,7 @@ def transcribe_audio_task(
             system_id=1,
             talkgroup_id=talkgroup_id,
             unit_id=unit_id,
-            timestamp=datetime.now(),
+            timestamp=timestamp,
             duration=info.duration,
             audio_path=str(audio_fp),
             transcript=text,
