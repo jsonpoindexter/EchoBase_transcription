@@ -1,20 +1,27 @@
 from __future__ import annotations
 
-from pydantic import Field
+from sqlmodel import Field
 
-from src.EchoBase_transcription.db.schemas.base import OrmBase
-
-
-class TalkGroupBase(OrmBase):
-    system_id: int
-    tg_number: int = Field(..., ge=1)
-    alias: str | None = Field(None, max_length=100)
-    whisper_prompt: str | None = None
+from src.EchoBase_transcription.db.schemas.base import DTOBase
+from src.EchoBase_transcription.db.models.talkgroup import TalkGroupBase
 
 
-class TalkGroupCreate(TalkGroupBase):
+class TalkGroupCreate(TalkGroupBase, DTOBase):
+    """
+    Body for creating a TalkGroup.
+
+    TalkGroupBase already defines:
+      system_id: int
+      tg_number: int
+      alias: str | None
+      whisper_prompt: str | None
+    """
     pass
 
 
-class TalkGroupRead(TalkGroupBase):
-    id: int
+class TalkGroupRead(TalkGroupBase, DTOBase):
+    """
+    Payload we return to clients for a TalkGroup.
+    """
+
+    id: int = Field(..., ge=1)

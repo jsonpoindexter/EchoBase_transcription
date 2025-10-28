@@ -1,4 +1,6 @@
-"""Public re-export of Pydantic schemas."""
+"""
+Public re-export of API DTO schemas.
+"""
 
 from .radio_unit import RadioUnitCreate, RadioUnitRead
 from .talkgroup import TalkGroupCreate, TalkGroupRead
@@ -9,8 +11,12 @@ from .call import (
     CallPatch,
     CallSearch,
 )
+from .base import DTOBase, Page
 
 __all__ = [
+    # Shared
+    "DTOBase",
+    "Page",
     # System
     "SystemCreate",
     "SystemRead",
