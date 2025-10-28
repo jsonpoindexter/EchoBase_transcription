@@ -1,30 +1,36 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
 
+from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from . import Base
 
 if TYPE_CHECKING:
-    # These imports are ONLY for the type checker / IDE.
-    # They do NOT run at runtime, so they do NOT create a cycle.
     from .call import Call
     from .radio_unit import RadioUnit
     from .talkgroup import TalkGroup
 
 
-class System(Base):
-    """A radio system or network (e.g. county‑wide P25)."""
-    calls: Mapped[list["Call"]] = relationship(back_populates="system")
-    units: Mapped[list["RadioUnit"]] = relationship(
-        back_populates="system", cascade="all, delete-orphan"
+class SystemBase(SQLModel):
+    """Shared attributes for System used in create/read/update."""
+
+    name: str = Field(
+        sa_column=Column(String(100), unique=True, nullable=False)
     )
-    talkgroups: Mapped[list["TalkGroup"]] = relationship(
-        back_populates="system", cascade="all, delete-orphan"
+    description: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
     )
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    id: Mapped[int] = mapped_column(primary_key=True)
+
+
+class System(SystemBase, table=True):
+    """Database model for a radio system or network (e.g. county‑wide P25)."""
+
     __tablename__ = "systems"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    # Relationships
+    calls: List["Call"] = Relationship(back_populates="system")
+    units: List["RadioUnit"] = Relationship(back_populates="system")
+    talkgroups: List["TalkGroup"] = Relationship(back_populates="system")
