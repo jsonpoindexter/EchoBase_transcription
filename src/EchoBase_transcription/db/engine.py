@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -15,8 +13,8 @@ from ..config import settings
 # --------------------------------------------------------------------------- #
 engine: Engine = create_engine(
     settings.database_url,
-    future=True,          # 2.0 style
-    pool_pre_ping=True,   # Detect stale connections
+    future=True,  # 2.0 style
+    pool_pre_ping=True,  # Detect stale connections
     echo=settings.sqlalchemy_echo,
 )
 

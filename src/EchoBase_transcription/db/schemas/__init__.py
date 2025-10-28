@@ -1,13 +1,8 @@
 """Public re-export of Pydantic schemas."""
 
-from .core import (
-    SystemCreate,
-    SystemRead,
-    TalkGroupCreate,
-    TalkGroupRead,
-    RadioUnitCreate,
-    RadioUnitRead,
-)
+from .radio_unit import RadioUnitCreate, RadioUnitRead
+from .talkgroup import TalkGroupCreate, TalkGroupRead
+from .system import SystemCreate, SystemRead
 from .call import (
     CallCreate,
     CallRead,
@@ -16,11 +11,13 @@ from .call import (
 )
 
 __all__ = [
-    # Core
+    # System
     "SystemCreate",
     "SystemRead",
+    # TalkGroup
     "TalkGroupCreate",
     "TalkGroupRead",
+    # RadioUnit
     "RadioUnitCreate",
     "RadioUnitRead",
     # Call

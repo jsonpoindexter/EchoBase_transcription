@@ -2,8 +2,14 @@
 
 from sqlalchemy.orm import DeclarativeBase
 
+
 class Base(DeclarativeBase):
     """Project‑wide declarative base class."""
     pass
 
-from .core import System, TalkGroup, RadioUnit, User, Call
+
+from .system import System
+from .talkgroup import TalkGroup
+from .radio_unit import RadioUnit
+from .call import Call
+from .user import User
