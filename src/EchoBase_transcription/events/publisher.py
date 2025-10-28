@@ -8,12 +8,13 @@ import redis
 from ..config.settings import settings
 from .channels import CALL_EVENTS, HEARTBEAT
 from .schemas import CallEvent, Heartbeat
+from ..db.models import Call
 
 # Instantiate one Redis connection for publishers
 _redis_client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
 
-def publish_call_event(event: CallEvent) -> None:
+def publish_call_update(event: Call) -> None:
     """Publish a CallEvent to CALL_EVENTS channel."""
     _redis_client.publish(CALL_EVENTS, event.model_dump_json())
 

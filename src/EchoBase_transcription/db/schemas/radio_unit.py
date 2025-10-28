@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlmodel import Field
 
-from src.EchoBase_transcription.db.schemas.base import DTOBase
-from src.EchoBase_transcription.db.models.radio_unit import RadioUnitBase
+from .base import DTOBase
+from ..models.radio_unit import RadioUnitBase
 
 
 class RadioUnitCreate(RadioUnitBase, DTOBase):

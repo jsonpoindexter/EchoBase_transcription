@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlmodel import Field
 
-from src.EchoBase_transcription.db.schemas.base import DTOBase
-from src.EchoBase_transcription.db.models.system import SystemBase
+from .base import DTOBase
+from ..models.system import SystemBase
 
 
 class SystemCreate(SystemBase, DTOBase):

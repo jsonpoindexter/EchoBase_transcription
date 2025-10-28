@@ -1,5 +1,4 @@
 """Celery task to transcribe a single radio call."""
-
 from __future__ import annotations
 
 import os
@@ -7,17 +6,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from ...db.schemas import CallCreate
 from ...worker.celery_app import celery_app
 from ...config import settings
-from ...db import get_session
-from ...events import publish_call_event, CallEvent
 from ...services.whisper import segment_confidence
-
-from ...db.models import Call, TalkGroup, RadioUnit
-from sqlalchemy import select
-
-# from ...services.whisper import make_prompt
+from ...db.schemas import CallCreate, RadioUnitCreate, TalkGroupCreate
+from ...services.call_service import create_call
+from ...services.radio_unit_service import get_or_create_radio_unit
+from ...services.talkgroup_service import get_or_create_talkgroup
 
 # ----------------------- Load Whisper *once* per worker -------------------- #
 
@@ -53,42 +48,53 @@ def transcribe_audio_task(
         language=language,
         # initial_prompt=make_prompt(prompt),
     )
+
+    # Collapse segments into a single transcript string
     text = " ".join(s.text.strip() for s in segments if s.text.strip())
-    confidence = [segment_confidence(segment) for segment in segments]
-    overall_confidence = sum(confidence) / len(confidence) if confidence else None
-    needs_review = overall_confidence is not None and overall_confidence < -1.0  # tweak threshold
 
-    # ------------------- 2. Persist in DB ---------------------------------- #
-    with get_session() as db:
-        # if unit_id is not present in radio_units table in db then insert it
-        if unit_id is not None:
-            existing_unit = db.execute(
-                select(RadioUnit.id).where(RadioUnit.unit_id == unit_id)
-            ).scalar_one_or_none()
-            if existing_unit is None:
-                print(f"No unit with id {unit_id}")
-                new_unit = RadioUnit(unit_id=unit_id, system_id=system_id)
-                db.add(new_unit)
-                db.flush()
-                print(f"Created new RadioUnit with id {new_unit.id}")
-                unit_id = new_unit.id
-            else:
-                print(f"RadioUnit with unit_id {unit_id} already exists in DB.")
-                unit_id = existing_unit
+    # Confidence scoring
+    confidences = [segment_confidence(segment) for segment in segments]
+    overall_confidence = (
+        sum(confidences) / len(confidences) if confidences else None
+    )
 
-        # Build a Pydantic DTO for validation first …
-        talkgroup_id: int | None = None
-        if tg_number is not None:
-            talkgroup_id = db.execute(
-                select(TalkGroup.id).where(
-                    TalkGroup.system_id == system_id,
-                    TalkGroup.tg_number == tg_number,
-                )
-            ).scalar_one_or_none()
-        payload = CallCreate(
-            system_id=1,
-            talkgroup_id=talkgroup_id,
-            unit_id=unit_id,
+    # Heuristic review gate
+    needs_review = (
+            overall_confidence is not None and overall_confidence < -1.0
+    )
+
+    # ------------------- 2. Ensure related rows exist ---------------------- #
+    # Upsert / resolve RadioUnit (per system_id + unit_id)
+    radio_unit_db_id: Optional[int] = None
+    if unit_id is not None:
+        ru_dto = get_or_create_radio_unit(
+            RadioUnitCreate(
+                system_id=system_id,
+                unit_id=unit_id,
+                alias=None,
+            )
+        )
+        radio_unit_db_id = ru_dto.id
+
+    # Upsert / resolve TalkGroup (per system_id + tg_number)
+    talkgroup_db_id: Optional[int] = None
+    if tg_number is not None:
+        tg_dto = get_or_create_talkgroup(
+            TalkGroupCreate(
+                system_id=system_id,
+                tg_number=tg_number,
+                alias=None,
+                whisper_prompt=None,
+            )
+        )
+        talkgroup_db_id = tg_dto.id
+
+    # ------------------- 3. Create Call row via service -------------------- #
+    call_dto = create_call(
+        CallCreate(
+            system_id=system_id,
+            talkgroup_id=talkgroup_db_id,
+            unit_id=radio_unit_db_id,
             timestamp=timestamp,
             duration=info.duration,
             audio_path=str(audio_fp),
@@ -97,27 +103,14 @@ def transcribe_audio_task(
             needs_review=needs_review,
             transcriber=settings.whisper_model_name,
         )
+    )
 
-        call = Call(**payload.model_dump())  # type: ignore[arg-type]
+    # `create_call` already publishes the SSE/update event via call_service
 
-        db.add(call)
-        db.flush()  # assigns call.id
-
-        # ---------------- 3. Publish event for SSE ------------------------- #
-        publish_call_event(
-            CallEvent(
-                call_id=call.id,
-                system_id=call.system_id,
-                talkgroup_id=call.talkgroup_id,
-                unit_id=call.unit_id,
-                timestamp=call.timestamp,
-                duration=call.duration,
-                confidence=call.confidence,
-                needs_review=call.needs_review,
-                transcript=call.transcript,
-                talkgroup_alias=call.talkgroup.alias if call.talkgroup else None,
-                system_name=call.system.name,
-            )
-        )
-
-    return {"call_id": call.id, "text": text}
+    # ------------------- 4. Return summary to caller ----------------------- #
+    return {
+        "call_id": call_dto.id,
+        "text": text,
+        "confidence": overall_confidence,
+        "needs_review": needs_review,
+    }

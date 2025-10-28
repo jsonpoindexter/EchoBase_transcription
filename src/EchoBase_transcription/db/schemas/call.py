@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from sqlmodel import Field
 
-from src.EchoBase_transcription.db.schemas.base import DTOBase
+from .base import DTOBase
 
 
 # ── Create / ingest (used by worker / Celery) ─────────────────────────────

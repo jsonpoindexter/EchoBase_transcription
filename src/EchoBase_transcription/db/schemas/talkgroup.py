@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlmodel import Field
 
-from src.EchoBase_transcription.db.schemas.base import DTOBase
-from src.EchoBase_transcription.db.models.talkgroup import TalkGroupBase
+from .base import DTOBase
+from ..models.talkgroup import TalkGroupBase
 
 
 class TalkGroupCreate(TalkGroupBase, DTOBase):
