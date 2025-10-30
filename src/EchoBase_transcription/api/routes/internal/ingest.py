@@ -28,7 +28,8 @@ async def ingest_data(file: UploadFile = File(...)) -> dict:
     except ValueError as e:
         # e.g. no talkgroups found
         raise HTTPException(status_code=422, detail=str(e))
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
+        print(f"Database error during talkgroup ingest: {e}")
         raise HTTPException(status_code=500, detail="Failed to persist talkgroups")
 
     return {
