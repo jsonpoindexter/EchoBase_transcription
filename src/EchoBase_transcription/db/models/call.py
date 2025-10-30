@@ -1,11 +1,7 @@
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import DateTime, Float, String, Text, Boolean, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
     from .system import System
@@ -17,52 +13,25 @@ if TYPE_CHECKING:
 class CallBase(SQLModel):
     """Shared attributes for Call used in create/read/update."""
 
-    timestamp: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), index=True, nullable=False)
-    )
+    # Core timing
+    timestamp: datetime = Field(index=True)
+    duration: Optional[float] = None  # seconds of audio
 
-    duration: Optional[float] = Field(
-        default=None,
-        sa_column=Column(Float),
-        description="Seconds of audio",
-    )
-
-    audio_path: str = Field(
-        sa_column=Column(String(255), nullable=False)
-    )
+    # File path
+    audio_path: str
 
     # ASR data
-    transcript: Optional[str] = Field(
-        default=None,
-        sa_column=Column(Text),
-    )
-    corrected_transcript: Optional[str] = Field(
-        default=None,
-        sa_column=Column(Text),
-    )
-    confidence: Optional[float] = Field(
-        default=None,
-        sa_column=Column(Float),
-    )
-    needs_review: bool = Field(
-        default=False,
-        sa_column=Column(Boolean, nullable=False, default=False),
-    )
-    transcriber: Optional[str] = Field(
-        default=None,
-        sa_column=Column(String(100)),
-    )
+    transcript: Optional[str] = None
+    corrected_transcript: Optional[str] = None
+    confidence: Optional[float] = None
+    needs_review: bool = Field(default=False)
+    transcriber: Optional[str] = None
 
-    reviewed_at: Optional[datetime] = Field(
-        default=None,
-        sa_column=Column(DateTime(timezone=True)),
-    )
+    reviewed_at: Optional[datetime] = None
 
-    # Postgres full‑text search vector
-    transcript_tsv: Optional[str] = Field(
-        default=None,
-        sa_column=Column(TSVECTOR),
-    )
+    # Optional: keep a plain text field for search materialization if desired.
+    # If you want a real TSVECTOR and GIN index, add it via Alembic.
+    transcript_tsv: Optional[str] = None
 
 
 class Call(CallBase, table=True):
@@ -73,49 +42,13 @@ class Call(CallBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     # Foreign keys
-    system_id: int = Field(
-        sa_column=Column(
-            ForeignKey("systems.id", ondelete="CASCADE"),
-            nullable=False,
-        )
-    )
-
-    talkgroup_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            ForeignKey("talkgroups.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-    )
-
-    unit_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            ForeignKey("radio_units.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-    )
-
-    reviewed_by: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            ForeignKey("users.id"),
-            nullable=True,
-        ),
-    )
+    system_id: int = Field(foreign_key="systems.id", index=True)
+    talkgroup_id: Optional[int] = Field(default=None, foreign_key="talkgroups.id", index=True)
+    unit_id: Optional[int] = Field(default=None, foreign_key="radio_units.id", index=True)
+    reviewed_by: Optional[int] = Field(default=None, foreign_key="users.id")
 
     # Relationships
     system: "System" = Relationship(back_populates="calls")
     talkgroup: Optional["TalkGroup"] = Relationship(back_populates="calls")
     unit: Optional["RadioUnit"] = Relationship(back_populates="calls")
     reviewer: Optional["User"] = Relationship()
-
-    # Indexes / table args
-    __table_args__ = (
-        Index("ix_calls_talkgroup_timestamp", "talkgroup_id", "timestamp"),
-        Index(
-            "ix_calls_transcript_tsv",
-            "transcript_tsv",
-            postgresql_using="gin",
-        ),
-    )

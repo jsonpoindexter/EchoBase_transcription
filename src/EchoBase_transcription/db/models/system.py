@@ -1,9 +1,6 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
 
-from typing import TYPE_CHECKING, Optional, List
-
-from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import String, Text
+from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
     from .call import Call
@@ -14,13 +11,8 @@ if TYPE_CHECKING:
 class SystemBase(SQLModel):
     """Shared attributes for System used in create/read/update."""
 
-    name: str = Field(
-        sa_column=Column(String(100), unique=True, nullable=False)
-    )
-    description: Optional[str] = Field(
-        default=None,
-        sa_column=Column(Text, nullable=True),
-    )
+    name: str
+    description: Optional[str] = None
 
 
 class System(SystemBase, table=True):
@@ -31,6 +23,6 @@ class System(SystemBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     # Relationships
-    calls: List["Call"] = Relationship(back_populates="system")
-    units: List["RadioUnit"] = Relationship(back_populates="system")
-    talkgroups: List["TalkGroup"] = Relationship(back_populates="system")
+    calls: list["Call"] = Relationship(back_populates="system")
+    units: list["RadioUnit"] = Relationship(back_populates="system")
+    talkgroups: list["TalkGroup"] = Relationship(back_populates="system")
