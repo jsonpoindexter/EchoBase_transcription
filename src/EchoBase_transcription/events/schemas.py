@@ -10,7 +10,9 @@ class CallEvent(DTOBase):
     call_id: int = Field(..., validation_alias="id")
     system_id: int
     talkgroup_id: int | None = None
+    talkgroup_alias: str | None = None
     unit_id: int | None = None
+    unit_alias: str | None = None
     timestamp: datetime
     duration: float | None = None
     transcript: str | None = None
