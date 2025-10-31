@@ -29,10 +29,6 @@ class CallBase(SQLModel):
 
     reviewed_at: Optional[datetime] = None
 
-    # Optional: keep a plain text field for search materialization if desired.
-    # If you want a real TSVECTOR and GIN index, add it via Alembic.
-    transcript_tsv: Optional[str] = None
-
 
 class Call(CallBase, table=True):
     """Database model for a single recorded radio transmission (one PTT)."""
