@@ -10,8 +10,8 @@ without importing SQLAlchemy internals everywhere.
 from contextlib import contextmanager
 from typing import Generator
 
-from .models import Base  # Ensures models are imported for metadata
-from .engine import engine, SessionLocal  # noqa: I001  (local import after .models)
+from .engine import engine, SessionLocal
+from sqlmodel import SQLModel
 
 
 def init_db() -> None:
@@ -20,7 +20,7 @@ def init_db() -> None:
     In production environments, prefer Alembic migrations.
     This helper is handy for unit tests or one‑off scripts.
     """
-    Base.metadata.create_all(bind=engine)
+    SQLModel.metadata.create_all(bind=engine)
 
 
 @contextmanager

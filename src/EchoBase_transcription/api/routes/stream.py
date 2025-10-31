@@ -9,6 +9,8 @@ router = APIRouter()
 
 
 @router.get("/transcription/events", response_class=StreamingResponse)
-async def transcription_events() -> StreamingResponse:  # noqa: D401
-    """Return an SSE stream of CallEvent objects."""
+async def transcription_events() -> StreamingResponse:
+    """
+    Return an SSE stream of CallEvent objects.
+    """
     return create_call_stream_response()

@@ -1,28 +1,27 @@
 """Typed event payloads used on the pub/sub bus."""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
+from ..db.schemas.base import DTOBase
 
-
-class CallEvent(BaseModel):
-    """Emitted when a radio call has been transcribed."""
-
-    type: Literal["call.transcribed"] = "call.transcribed"
-    call_id: int
+class CallEvent(DTOBase):
+    call_id: int = Field(..., validation_alias="id")
     system_id: int
-    talkgroup_id: Optional[int] = None
-    unit_id: Optional[int] = None
+    talkgroup_id: int | None = None
+    talkgroup_alias: str | None = None
+    unit_id: int | None = None
+    unit_alias: str | None = None
     timestamp: datetime
-    duration: float
-    confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    duration: float | None = None
+    transcript: str | None = None
+    corrected_transcript: str | None = None
+    confidence: float | None = None
     needs_review: bool
-    transcript: Optional[str]
-
-    # Convenience for SSE filters (string alias)
-    talkgroup_alias: Optional[str] = None
-    system_name: Optional[str] = None
+    transcriber: str | None = None
+    reviewed_at: datetime | None = None
+    reviewed_by: int | None = None
 
 
 class Heartbeat(BaseModel):

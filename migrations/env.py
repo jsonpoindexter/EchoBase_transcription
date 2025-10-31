@@ -1,79 +1,81 @@
+from __future__ import annotations
+
+import os
+import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import pool, create_engine
+from sqlmodel import SQLModel
 
-from src.EchoBase_transcription.config import settings
+# --- Make sure `src` is on sys.path so we can import your package ---
+# This assumes repo structure: <repo> / src / EchoBase_transcription / ...
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SRC_DIR = os.path.join(REPO_ROOT, "src")
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
-# Import the declarative base to expose all model metadata for Alembic
-from src.EchoBase_transcription.db.models import Base  # noqa: E402
+# --- Import your settings and models so tables register on SQLModel.metadata ---
+from src.EchoBase_transcription.config.settings import settings  # adjust attr name if needed
+# Import modules to register tables (do NOT remove); explicit is safest.
+from src.EchoBase_transcription.db.models import (  # noqa: F401
+    system,
+    talkgroup,
+    radio_unit,
+    call,
+    user,
+)
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Alembic Config object
 config = context.config
 
 # Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = Base.metadata
+# ---- Resolve database URL ----
+# Prefer env var (e.g., CI/CD), else your app settings
+db_url = os.getenv("DATABASE_URL") or getattr(settings, "database_url", None)
+if not db_url:
+    raise RuntimeError(
+        "DATABASE_URL is not set and settings.database_url is empty. "
+        "Set env var DATABASE_URL or configure it in EchoBase_transcription.config.settings."
+    )
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+# Target metadata for 'autogenerate'
+target_metadata = SQLModel.metadata
+
+# Autogenerate tuning
+COMPARE_TYPES = True
+COMPARE_SERVER_DEFAULT = True
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
-    url = config.get_main_option("sqlalchemy.url")
+    """Run migrations in 'offline' mode."""
     context.configure(
-        url=url,
+        url=db_url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=COMPARE_TYPES,
+        compare_server_default=COMPARE_SERVER_DEFAULT,
         dialect_opts={"paramstyle": "named"},
+        render_as_batch=False,  # set True only if you need batch mode (e.g., SQLite)
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-    config.set_main_option("sqlalchemy.url", settings.database_url)
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    with connectable.connect() as connection:
+    """Run migrations in 'online' mode."""
+    engine = create_engine(db_url, poolclass=pool.NullPool, future=True)
+    with engine.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=COMPARE_TYPES,
+            compare_server_default=COMPARE_SERVER_DEFAULT,
+            render_as_batch=False,
         )
-
         with context.begin_transaction():
             context.run_migrations()
 
