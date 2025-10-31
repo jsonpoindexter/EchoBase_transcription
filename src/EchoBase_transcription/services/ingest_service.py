@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as Et
+import xml.etree.ElementTree as ET
 from typing import Dict, Tuple
 
 from sqlalchemy import delete
@@ -16,7 +16,7 @@ def _parse_sdrtrunk_aliases(xml_bytes: bytes) -> Dict[int, str]:
 
     Raises ET.ParseError if the XML is invalid.
     """
-    root = Et.fromstring(xml_bytes)
+    root = ET.fromstring(xml_bytes)
 
     talkgroups: Dict[int, str] = {}
 
