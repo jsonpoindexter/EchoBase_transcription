@@ -14,9 +14,10 @@ from ..db.models import Call
 _redis_client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
 
-def publish_call_update(event: Call) -> None:
+def publish_call_update(call: Call) -> None:
     """Publish a CallEvent to CALL_EVENTS channel."""
-    _redis_client.publish(CALL_EVENTS, event.model_dump_json())
+    dto = CallEvent.model_validate(call, from_attributes=True)
+    _redis_client.publish(CALL_EVENTS, dto.model_dump_json())
 
 
 def publish_heartbeat(worker_id: str) -> None:
