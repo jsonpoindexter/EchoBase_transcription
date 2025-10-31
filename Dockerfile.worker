@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=echobase_transcription-worker:prod
+ARG BASE_IMAGE=echobase_transcription-worker:dev
 FROM ${BASE_IMAGE}
 
 # System deps for dropping privileges
