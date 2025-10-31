@@ -29,6 +29,7 @@ def create_call(data: CallCreate) -> CallRead:
         db_call = Call(**data.model_dump())
         session.add(db_call)
         session.flush()  # populate db_call.id
+        session.commit()
 
         # Broadcast to any live subscribers (SSE, websockets, etc.)
         publish_call_update(db_call)
